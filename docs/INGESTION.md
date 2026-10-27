@@ -135,20 +135,30 @@ establishes entitlement. Duplicate invoice/line identity is ambiguous and never
 silently deduplicated. Every input line produces a finding, including malformed
 line objects. An invoice with no lines produces one missing-line diagnostic.
 
-Money is strict nonnegative integer cents. Tolerance is exactly 0, 50 or 100.
+Money is strict nonnegative integer cents. Invoice currency and every line's own
+currency must explicitly equal `USD`; missing or other line currencies produce
+`cannot_determine` with null expectation/proposal before pricing. The root currency
+does not supply a default for a line. Tolerance is exactly 0, 50 or 100.
 Eligible overage is the full billed-minus-expected amount when above the deadband;
 tolerance is never subtracted. Undercharges propose zero and never offset another
 line. Known zero entitlement is `unsupported`, with zero proposal inside deadband.
 Unknown facts cannot establish zero entitlement, duplicate money or approved dollars.
 
-The dependency hash binds all supplied facts, source snapshots, policy version,
-linking behavior and DL1 `ENGINE_VERSION`; both semantic revision tokens must be
-bumped when their respective behavior changes. Outer collections, invoice lines
-and pointer lists are canonicalized for hashing. Verified FieldValue certificates
-are represented by their exact source snapshots and typed facts rather than
-incidental dotted indexes. Native invoice bindings still follow source line order;
-shuffling an extracted document requires the matching field certificates, not
-editing its values alone. Finding IDs follow namespaced invoice/line identity;
+The dependency hash binds all supplied facts, source snapshots, the binding-closure
+schema revision, policy version, linking behavior and DL1 `ENGINE_VERSION`; semantic
+revision tokens must be bumped when their respective behavior changes. Documents
+are verified before hashing. Each document joins its semantic payload to its sorted
+verified source pointers and certificate identities: exact source span, normalizer
+and extraction method. Leaf certificates stay attached to their typed fact and
+semantic path while invoice lines are canonicalized, so matching line/certificate
+permutations do not retain incidental dotted indexes. Outer collections and pointer
+lists are also canonicalized. Reassigning an equal quote to another archived source,
+changing a conversion or removing a certificate changes the dependency; failed
+bindings carry a distinct invalid state and their supplied certificates. Whole native
+JSON bindings retain their complete source pointer, so changed original JSON bytes
+or source line order change the hash. Native invoice bindings still follow source
+line order; shuffling an extracted document requires the matching field certificates,
+not editing its values alone. Finding IDs follow namespaced invoice/line identity;
 changed facts keep the ID but invalidate its dependency hash and review binding.
 
 `evidence_pointers` includes complete verified invoice, line, shipment, contract,

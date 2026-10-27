@@ -24,17 +24,43 @@ def _sorted(values: list[dict]) -> list[dict]:
 
 
 def _dependency_value(value: object, key: str = "") -> object:
-    """Keep source/typed facts, canonicalize occurrence and pointer collections.
-
-    Per-field certificates are verified separately; exact source snapshots and
-    consumed document values bind their meaning without incidental index labels.
-    """
+    """Canonicalize facts; verified certificate identities are joined separately."""
     if isinstance(value, dict):
         return {k: _dependency_value(v, k) for k, v in value.items() if k != "field_values"}
     if isinstance(value, list):
         items = [_dependency_value(v) for v in value]
         return sorted(items, key=canonical) if key in ("lines", "evidence_pointers", "pointers") else items
     return value
+
+
+def _binding_identity(document: dict) -> dict:
+    """Bind each verified fact to its conversion and exact source span.
+
+    Nest certificates at their fact paths before sorting invoice lines, so a
+    matching line/certificate permutation does not retain incidental indexes.
+    Whole-document pointers still bind the original JSON's exact source order.
+    """
+    fields = document["field_values"]
+
+    def certificate(field):
+        return {key: field[key] for key in ("pointer", "normalizer_id", "method")}
+
+    if "$document" in fields:
+        return {"$document": certificate(fields["$document"])}
+
+    def walk(value, path="", key=""):
+        if isinstance(value, dict):
+            return {
+                name: walk(child, f"{path}.{name}" if path else name, name)
+                for name, child in value.items()
+                if name not in ("field_values", "evidence_pointers", "source_sha256")
+            }
+        if isinstance(value, list):
+            items = [walk(child, f"{path}.{index}") for index, child in enumerate(value)]
+            return sorted(items, key=canonical) if key in ("lines", "pointers") else items
+        return {"value": value, **certificate(fields[path])}
+
+    return walk(document)
 
 
 def reconcile_batch(
@@ -53,17 +79,6 @@ def reconcile_batch(
     if not isinstance(ENGINE_VERSION, str) or not ENGINE_VERSION:
         raise ValueError("engine_version_required")
 
-    snapshot = sources.snapshot() if sources is not None else None
-    closure = {
-        "policy": POLICY_VERSION, "engine_version": ENGINE_VERSION,
-        "tolerance_cents": tolerance_cents,
-        "contracts": _sorted([_dependency_value(v) for v in contracts]),
-        "shipments": _sorted([_dependency_value(v) for v in shipments]),
-        "invoices": _sorted([_dependency_value(v) for v in invoices]),
-        "fuel_index": _sorted([_dependency_value(v) for v in fuel_index]),
-        "sources": snapshot,
-    }
-    dependency_hash = digest(closure)
     verified, invalid = {}, {}
     for document in contracts + shipments + invoices + fuel_index:
         document_key = digest(document)
@@ -73,6 +88,35 @@ def reconcile_batch(
             verified[document_key] = verify_document(document, sources)
         except (ValueError, TypeError, KeyError) as exc:
             invalid[document_key] = "source_binding_invalid:" + str(exc)
+
+    def dependency(document):
+        document_key = digest(document)
+        if document_key in verified:
+            binding = {
+                "verified": True,
+                "pointers": _sorted(verified[document_key]),
+                "certificates": _binding_identity(document),
+            }
+        else:
+            # Invalid/missing certificates must never share a formerly valid
+            # approval dependency, even when all consumed typed facts agree.
+            binding = {
+                "verified": False, "error": invalid[document_key],
+                "certificates": document.get("field_values"),
+            }
+        return {"document": _dependency_value(document), "source_binding": binding}
+
+    closure = {
+        "closure_version": "freightrec-verified-bindings-v1",
+        "policy": POLICY_VERSION, "engine_version": ENGINE_VERSION,
+        "tolerance_cents": tolerance_cents,
+        "contracts": _sorted([dependency(v) for v in contracts]),
+        "shipments": _sorted([dependency(v) for v in shipments]),
+        "invoices": _sorted([dependency(v) for v in invoices]),
+        "fuel_index": _sorted([dependency(v) for v in fuel_index]),
+        "sources": sources.snapshot() if sources is not None else None,
+    }
+    dependency_hash = digest(closure)
     rows = []
     # Preserve even malformed identities and duplicate records as findings.
     for invoice in invoices:
@@ -95,6 +139,8 @@ def reconcile_batch(
                 row["errors"].append(invalid[digest(invoice)])
             if invoice.get("currency") != "USD":
                 row["errors"].append("unsupported_currency")
+            if line.get("currency") != "USD":
+                row["errors"].append("line_currency_must_be_USD")
             total = cents(invoice.get("total_cents"))
             amounts = [cents(item.get("billed_cents")) if isinstance(item, dict) else None for item in lines]
             if total is None or any(value is None for value in amounts) or sum(value for value in amounts if value is not None) != total:
