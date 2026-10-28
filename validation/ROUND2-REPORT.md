@@ -56,6 +56,16 @@ Corrected setup explicitly enabled executable native-library mappings on the APP
 
 All own containers are absent and m13freight/pdfguard released; source/venvs/artifacts remain. No named volumes, host ports, pulls, external model calls or credential use. Selected controlled worker kill/overflow and guard-before-parser behavior executed on both platforms; destructive resource exhaustion/broad hostile-PDF qualification remains unexecuted.
 
+## Original PDF CLI bridge — later revision
+
+DL4 candidate121fc3677bc3c3a188704d6d48627f06b40137e7 adds canonical bundles.py hydration: original JSON strings remain compatible; invoice descriptors must contain exactly media_type/template_id/data_base64, with strict canonical base64 and size/type bounds. Actual guarded extraction and SAME resolver bind raw PDF SHA/profile/pages/quotes to typed invoice fields. No caller evidence/verified hook, reconstructed JSON original or guard relaxation. Stateful hydration failures still retire prior contexts before refusal.
+
+Owner final affected scope62passed across two commands, with the rehashed descriptor+field_values bypass reproduced as4failures before a High repair/review closure. Old JSON recording remains compatible; PDF frozen recording is explicitly unsupported in that version and all consumers fail closed. This was an allowed bounded-scope choice, not an unsupported benchmark pass.
+
+ONE owner actual native CLI module report at candidate121fc36 exited0/stderr0; three findings and69PDF pointer occurrences resolved against original961byte builder PDF SHA34d575ccb33b2efe1ed046baed4ffffaeb5c1ffb082e81c9895180f4c2a4c198, profilepdfplumber-0.11.10-isolated-v2. Root runtime-state/DL4-pdf-process-e91d23a362f44658b9f11e8a11ac5ced retains original bytes/report/raw streams/receipt. No review actor or approved draft.
+
+INT integrated5d831a56534aaddfe60bcf4d5a8eecc0ff0b81ff and executed complete native suite: **375passed/0fail/0skip**,48.46s, runtime-state/INT-pdf-cli-076362f0ea644bfbaac1e338280e1029. No current-revision Linux bridge result is inferred from the earlier guarded-parser Linux run.
+
 ## Current remaining source path
 
-CLI construction input currently accepts original structured JSON invoices. DL4 is completing the planned strict ORIGINAL native PDF descriptor path through guarded extraction, the same retained source resolver, findings/review and shared observation recording. Its future candidate is not covered by the results above. Independent role endpoints and corpus/human/live gates remain pending as already listed; no new benchmark claim follows from the worker tests.
+DL4 now owns a separate P8 follow-up for explicit versioned original-PDF frozen observation capture/replay across the same A0/A1/A2 observations, preserving strict old JSON format validation and keeping reference labels outside product replay. That future source is not covered by the results above. Independent role endpoints and corpus/human/live gates remain pending; no benchmark claim follows from these builder checks.
