@@ -1,8 +1,8 @@
 # Shared diagnostic observation edition
 
-Construction source only. None of the conversion, baseline, product replay or
-scoring paths described here has run. This adapter is a builder tool; it supplies
-no independent reference, authenticated human evidence or campaign admission.
+This adapter is a builder tool with focused native regression controls for capture,
+baseline conversion and scoring. No independent corpus or campaign has run; the
+adapter supplies no independent reference, authenticated human evidence or admission.
 
 `evaluation.observations.freeze_recording(documents, findings, links, strata,
 *, engine_version, policy_version, source_resolver, tolerance_cents=0,
@@ -86,9 +86,17 @@ returned observations plus diagnostic_outputs' arm mapping to run_development;
 no caller is given permission to run it by this document. All admission, hidden
 slices, oracle/custody/audits and human-session gates remain pending.
 
-Deferred checks: actual source-capture/replay parity, canonical ID/component
-stability, exact/manual/unresolved same-carrier outcomes, missing/extra/duplicate
-candidate invalidation, snapshot mutation rejection, source-reference exclusion,
-tolerance and allocation trace parity including missing/duplicate/mistyped traces,
-billed detention conversions, actual-domain A1 latest-contract/index adapter,
-and full-denominator/reference-join controls. No conversion or score has run.
+Focused builder regressions exercise original-source capture and fact replay,
+exact-link capture, detached replay mutation isolation, source mutation refusal,
+reference-join keyset checks and reference-label exclusion from the frozen payload.
+They also exercise missing A2 output and mismatched/missing/duplicate/mistyped
+allocation-deadband invalidation without row loss, plus A0/A1 conversion and small
+diagnostic scoring. These calculations establish no corpus benchmark score,
+improvement or human evidence.
+
+Broader adapter-specific canonical ID stability, manual/unresolved link vectors,
+extra/duplicate A2 output cases, forged snapshot rejection, reserved source-field
+exclusion, billed detention conversions, A1 latest-contract/index expected-value
+vectors and comprehensive denominator parity remain deferred. Graph/copy
+completeness, independent references, the full evaluation campaign and admission
+remain pending.
