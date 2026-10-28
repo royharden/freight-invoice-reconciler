@@ -3,7 +3,11 @@
 Construction source only; runtime, SQLite behavior and isolation have not run.
 
 `DecisionLog(path)` uses SQLite WAL at a caller-selected local state path outside
-OneDrive/repositories. `register_finding(finding)` appends a full canonical snapshot
+OneDrive/repositories. Before opening any SQLite connection it calls the shared
+state_policy.validate_state_path(path), owned by the domain lane; the helper must
+be integrated before constructor activation. See STATE.md for its path rules.
+No duplicate path validator or environment/credential lookup is added here.
+`register_finding(finding)` appends a full canonical snapshot
 when it differs from the latest snapshot and returns
 `{"finding_hash": <SHA-256>, "finding_revision": <positive integer>}`. An unchanged
 latest snapshot retains its revision; a change followed by a return to identical

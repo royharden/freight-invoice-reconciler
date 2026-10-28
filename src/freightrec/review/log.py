@@ -42,7 +42,8 @@ class DecisionLog:
     """
 
     def __init__(self, path):
-        self.path = str(path)
+        from ..state_policy import validate_state_path
+        self.path = str(validate_state_path(path))
         with closing(self._connect()) as db:
             db.executescript("""
                 PRAGMA journal_mode=WAL;
