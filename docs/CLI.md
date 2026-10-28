@@ -122,3 +122,10 @@ Evaluation source lives outside the wheel in evaluation/. No CLI command
 creates held-out inputs, grants admission or dispatches models. Independent
 inputs and campaign-level result reproducibility remain deferred; the focused
 builder regressions exercise only the local seams described above.
+
+For an authorized builder process journey, scripts/journey_round2.py invokes
+the actual CLI in fresh Python processes and retains command/exit/output hashes.
+It uses only explicit provisional actors, expects draft refusal, and records a
+changed original-source edition for stale-token refusal. See scripts/README.md
+for the required interpreter, source pin and new artifact-directory parameters.
+This journey supplies neither human participation nor independent evaluation.
