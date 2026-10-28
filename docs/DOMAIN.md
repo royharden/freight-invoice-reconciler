@@ -64,5 +64,8 @@ must lock tzdata before runtime validation on Windows/Docker.
 | Zero eligibility | Explicit unauthorized service is zero; absent authorization is unknown |
 
 These are builder-owned explanatory arithmetic, not held-out cases or gate evidence.
-Deferred: import/integration execution, all boundary/runtime tests, tzdata packaging
-and lock verification, DL2 provenance/dependency binding and complete CLI journey.
+Round 2 native builder regressions now exercise money/pricing/time boundaries
+and one source-bound DL2 cap/duplicate/no-netting integration on Python 3.12.13
+with supplied tzdata. These checks are non-independent, not admission or a
+confirmatory campaign. Complete CLI/review/draft journeys, platform parity and
+independent validation remain outside this lane's executed scope.

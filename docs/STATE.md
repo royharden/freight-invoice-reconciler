@@ -1,6 +1,7 @@
 # SQLite state location
 
-Construction source only; runtime behavior is unverified.
+Round 2 includes native Windows builder regression checks; complete storage
+integration and platform behavior remain incompletely validated.
 
 `freightrec.state_policy.validate_state_path(path, *, forbidden_roots=()) -> Path`
 is the single shared validator. It returns a resolved path or raises ValueError.
@@ -29,7 +30,10 @@ filesystems or concurrent path replacement. It is a storage-placement guard,
 not an atomic open or authorization boundary. Callers must avoid adversarial
 path mutation between validation and SQLite open.
 
-Deferred validation: Windows symlink/junction aliases and escape attempts, UNC and
-reserved-name behavior, dangling links/loops, permissions, mapped drives, missing
-parents and actual SQLite integration. No imports, tests or database creation ran
-under Dirty Mode. Other checkout roots require caller-provided knowledge.
+Round 2 builder tests exercise local missing-file noncreation, regular-file
+preservation, directory/source/OneDrive/relative/URI/UNC/stream refusal, actual
+temporary directory symlinks and dangling links, plus mocked remote/unknown drive
+status and API failure. No mapped drive or external resource was created.
+Deferred: actual junctions, inaccessible permissions, real mapped drives,
+reserved-name edge behavior, path races and full SQLite caller integration.
+Other checkout roots require caller-provided knowledge.
