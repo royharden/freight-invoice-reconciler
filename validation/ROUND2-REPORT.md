@@ -41,6 +41,21 @@ Independent nonlineage authors/oracle/custodian/stand-in endpoints and actual hu
 
 Both Linux executions used network NONE, read-only root/source/venv, nonroot user, capped memory/CPU/pids, tmpfs and only a project artifact mount. No home/socket/credential mount, privileged mode, host port, image pull, or named volume. Pinned public wheel setup was a separate permitted package-only network step, with RAM6.33GiB; tests6.40GiB/journey6.95GiB before launch. Own ephemeral containers are gone and m13freight/round2 claim released; worktree/venvs/artifacts retained. No other container was stopped.
 
-## Remaining required source boundary
+## Isolated PDF worker — later source and actual checks
 
-The PDF adapter at these tested revisions has cooperative elapsed checks and cannot interrupt a blocked parser. A dedicated bounded worker fix is assigned to DL2 under ROUND2-PDF-BOUND-r1; **not implemented/validated by the results above**. Later source changes need their affected evidence recorded separately. This is a material ingestion limit, not a reason to reinterpret already executed small builder tests as hard resource qualification.
+DL2 candidate294e7d530cb052a7fa14032e2ad895f96b5de981 adds a fixed owned parser process, parent wall deadline including startup, bounded request/stdout/stderr and strict result protocol, and required OS guards before parser import. Windows uses queried own-process Job limits; Linux uses verified address-space/CPU limits. No unsafe parent fallback or shell/user command hook. Profile is a new immutable pdfplumber-<version>-isolated-v2 edition. This does not provide a complete malicious-code/OS sandbox or hard real-time scheduling guarantee.
+
+Owner source/ingestion scope passed83distinct tests plus one affected-case repeat, with Medium0047 source review PASS. Its prior malformed-protocol classification timeout is retained; only that framing-control test allowance changed15s, productiondefault5s and actual1s parent-kill control stayed unchanged. INT merged sourceb7166da20bfb304c5aeabf3caae1b7112727a944 and ran the full native suite: **329passed/0fail/0skip**,33.47s, artifact runtime-state/INT-pdf-final-fe9f99c10a00496eae76b50b390b6fbe.
+
+Linux verification retained two additional negative setup observations at the SAME source, test assertions and default5s limit:
+
+- Windows-bind Linux venv:323pass/1fail/5Windows-only skips. The first owned valid worker exceeded its parent deadline and was correctly killed. Artifact runtime-state/INT-linux-pdf-final-9844a7b8e49c4744b8d7e67e2e8000f6. Cold bind-filesystem startup cost is plausible, not a general causal/performance proof.
+- First staged local venv:317pass/1fail/11skip and6dependency-import warnings; native extensions could not map from that app mount. Artifact runtime-state/INT-linux-pdf-localfs-7ff048fa1a4d45448c1cab637798329b. This is a failed setup/run, not a qualified six-test dependency omission.
+
+Corrected setup explicitly enabled executable native-library mappings on the APP tmpfs and required a successful pdfplumber0.11.10 dependency preflight. The existing pinned Linux venv was copied to /app/.venv, no new download/install or source/test/default-limit change. **324passed/5Windows-only skips/0fail**,45.45s, sourceb7166da, same cached image, network NONE. Artifact runtime-state/INT-linux-pdf-execfs-ccc136fab77e43a6b67b19c25394b24a; staging script digest6887b92ed956968a24bc6d12e60785b903d16af3d34fb0b2642ec3a9c032c455. The Windows-only cases passed natively. This qualifies the stated environment/checks, not every cold/slow filesystem or host load. Resource bounds may safely refuse a valid PDF that exceeds its selected deadline.
+
+All own containers are absent and m13freight/pdfguard released; source/venvs/artifacts remain. No named volumes, host ports, pulls, external model calls or credential use. Selected controlled worker kill/overflow and guard-before-parser behavior executed on both platforms; destructive resource exhaustion/broad hostile-PDF qualification remains unexecuted.
+
+## Current remaining source path
+
+CLI construction input currently accepts original structured JSON invoices. DL4 is completing the planned strict ORIGINAL native PDF descriptor path through guarded extraction, the same retained source resolver, findings/review and shared observation recording. Its future candidate is not covered by the results above. Independent role endpoints and corpus/human/live gates remain pending as already listed; no new benchmark claim follows from the worker tests.
