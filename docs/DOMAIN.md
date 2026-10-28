@@ -5,6 +5,12 @@ Construction only; runtime unverified. All inputs are JSON-compatible dictionari
 `price_contracts(contracts, shipment, fuel_index) -> list[dict]` live in
 `freightrec.engine.engine`, with `ENGINE_VERSION` binding semantic changes.
 Contract-list selection belongs to `price_contracts`; overlap/gap refuses.
+For the relevant carrier/lane, all supplied consecutive version intervals must
+be contiguous: any internal gap invalidates selection even if the shipment date
+lies in another supplied interval. Adjacent equal endpoints are valid under
+[from,to). No coverage is invented outside the earliest/latest supplied bounds;
+a shipment outside those bounds remains unknown. Other lanes do not supply
+coverage. ENGINE_VERSION is `rate-spec-v0-construction-5`.
 Codes: LH, FS, DETENTION, LIFTGATE. Entitlements contain code, stop_seq,
 expected_cents (null on unknown), clause_id, trace, missing_facts, reason_code,
 evidence_pointers. LH/FS use stop_seq=0. Accessorials use delivery stop_seq.

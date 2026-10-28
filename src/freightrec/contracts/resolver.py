@@ -31,6 +31,8 @@ def select_contract(contracts: list[dict], shipment: dict) -> dict:
     ordered = sorted(intervals)
     if any(a[1] > b[0] for a, b in zip(ordered, ordered[1:])):
         raise ValueError("overlapping contract versions")
+    if any(a[1] < b[0] for a, b in zip(ordered, ordered[1:])):
+        raise ValueError("internal gap between contract versions")
     if len(matches) != 1:
         raise ValueError("contract gap or multiple applicable versions")
     return matches[0]

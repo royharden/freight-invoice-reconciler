@@ -7,7 +7,7 @@ from ..contracts.model import validate_contract
 from ..contracts.resolver import select_contract
 from ..contracts.fuel import fuel_percent
 
-ENGINE_VERSION = "rate-spec-v0-construction-4"
+ENGINE_VERSION = "rate-spec-v0-construction-5"
 
 
 def _item(code, stop=0, amount=None, clause=None, trace=None, missing=None, pointers=None, reason=None):
