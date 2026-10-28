@@ -1,10 +1,11 @@
 # Construction limitations
 
-Dirty construction is runtime-unverified. No installation, tests, demo, benchmark,
-bootstrap, simulation, SQLite replay or PDF parse has run in this phase.
-Independent admission, H/O/J staffing and custody, actual human audits, licenses
-and confirmatory campaign remain PENDING — needs Roy. Source tools are not
-evidence that a gate passed. No measured improvement or savings is claimed.
+Round-two native builder regressions exercise CLI flows, disposable SQLite,
+mock ports and small integer evaluation/observation controls. These checks cover
+specific code behavior; deployment and the full scientific campaign remain
+unverified. Independent admission/custody, actual human audits, licenses and
+confirmatory evaluation remain PENDING — Roy. Delegated stand-ins, if separately
+appointed, are not human-independent. No measured improvement or savings is claimed.
 
 All builder examples are non-independent synthetic illustrations. H-in and H-out
 must remain separate; no builder-authored source substitutes for independent
@@ -22,7 +23,9 @@ not_run_guardrail. There is no credential lookup, SDK or HTTP transport.
 Mock/nonmodel current external cost is zero by construction; historical capture
 cost and usage stay null when unknown. A USD40 app ceiling grants no spend.
 
-Python/timezone/dependency compatibility, native Windows behavior, import/effect
-closure, concurrent SQLite behavior, exact-source pointer normalization and all
-end-to-end seams await separately authorized validation. No generated lockfile
-or future dependency pin is represented as verified.
+The full 1000-by-10,000 sizing simulation, independent reference data, broad
+PDF/parser limits, comprehensive Windows and cross-platform timezone/path behavior,
+comprehensive import/effect closure and concurrency under load still require
+their own execution evidence. Tests do not establish production
+safety or authenticated people. Dependency installation and exact executed revisions
+are recorded separately from source declarations; no unrun check is a pass.

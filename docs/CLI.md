@@ -1,7 +1,9 @@
 # Local construction CLI
 
-Source only: none of these commands has been executed. Python 3.12+ is intended.
-After a separately authorized installation, `freightrec status` reports pending
+Python 3.12+ is intended. Native builder regressions exercise these CLI flows
+through the actual entrypoint parser, using original synthetic sources and
+disposable local state. These checks establish no independent benchmark or human
+review evidence. `freightrec status` reports pending
 admission, runtime unverified, A3 not_run and A4 not_run_guardrail.
 `--live` anywhere refuses before input reads or provider imports.
 
@@ -23,7 +25,7 @@ Preparsed dictionaries, metadata-bound documents and the former separate
 original evidence. Native PDF ingest is a separate operation, and this
 structured-JSON construction path does not claim PDF provenance.
 
-Future keyless construction use:
+Keyless construction use:
 
 ```
 freightrec reconcile --builder-only --input bundle.json --out findings.json
@@ -78,7 +80,9 @@ observed cannot be detected; there is no background monitor.
 
 All CLI and ledger state entrypoints use the shared policy documented in
 STATE.md: an ordinary local absolute path outside source checkouts and OneDrive.
-Path resolution/junction/symlink behavior and database access remain unexecuted.
+Focused native regressions exercise disposable SQLite access and state-path
+refusals before database opening. Comprehensive Windows junction/symlink and
+cross-platform path behavior remain deferred.
 
 Prepare a review intent using the original bundle and persistent local state:
 
@@ -116,4 +120,5 @@ Every file is inert DRAFT, NOT SENT. No command sends it anywhere.
 
 Evaluation source lives outside the wheel in evaluation/. No CLI command
 creates held-out inputs, grants admission or dispatches models. Independent
-inputs, runtime seams and result reproducibility remain deferred.
+inputs and campaign-level result reproducibility remain deferred; the focused
+builder regressions exercise only the local seams described above.

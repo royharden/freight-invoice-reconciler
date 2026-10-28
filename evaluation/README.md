@@ -1,8 +1,9 @@
 # Evaluation source
 
 Builder-authored tools from promoted `PLAN-M13-v1.md` sections 7–8. These files
-have not been executed in the Dirty construction pass. They establish no data
-independence, admission, benchmark results, confidence intervals or human review.
+now have focused native builder regressions for small integer controls and original
+builder-source capture. No corpus benchmark or full sizing simulation has run.
+These checks establish no data independence, admission or human review evidence.
 
 `arms.a0` and `arms.a1` implement the frozen deliberately limited policies.
 `metrics.score_arm` requires one explicit output per occurrence and invalidates
@@ -40,7 +41,8 @@ have explicit decimal-string hours/minutes/increments, never inferred from elaps
 time. A1 requires explicit row `currency: "USD"` before pricing; missing/non-USD
 currency abstains without a monetary proposal. It consumes the actual domain's
 top-level lane contracts and latest index_value through the newest contract's
-fuel bracket. This source adapter remains unexecuted/unqualified. Recorded
+fuel bracket. Builder regressions exercise source capture and baseline conversion;
+broader baseline policy qualification remains deferred. Recorded
 resolved human links are shared upstream observations, not fuzzy automatic
 links, and no adapter can authorize a product link. Supply the same frozen extraction/link
 observations to every arm. No baseline
@@ -77,11 +79,15 @@ structure and always leaves GO pending for actual J/human/Roy dispositions.
 No custody-opening, oracle, heldout generator, independent gold, scoring campaign
 or provider transport is implemented. A3 is not run; A4 is status only and disabled.
 
-Deferred validation: scorer controls (partial proposal, all-abstain, selective
-abstain, negative/float/bool/above-billed/missing), baseline vectors, whole-component
-resampling and denominator parity, degeneracy, zero denominators, sizing simulation
-correctness/performance, strict JSON/JSONL round trips, missing/conflicting-total
-A0 residual/duplicate branches, raw/delta interval parity and external evalkit
-comparison. Full confirmatory gates,
+Focused builder regressions exercise partial/all/selective-abstention scorer
+controls, malformed/missing/negative/float/bool/above-billed attempts, strict
+deadbands, component identity and split checks, whole-component stratified
+resampling, ratio-of-sums denominators, degeneracy, zero denominators, seeded
+repeatability, invalid-attempt JSON/JSONL retention and nonfinite analytic sizing.
+These are small diagnostic calculations, not corpus benchmark scores or evidence
+of improvement. Broader baseline vectors, the full 1000-by-10,000 sizing simulation
+and its performance, comprehensive serialization round trips,
+missing/conflicting-total A0 residual/duplicate branches, broader raw/delta interval
+parity and external evalkit comparison remain deferred. Full confirmatory gates,
 independent references/mutants, trap/injection/audit results, custody and real human
 spot-checks remain pending; no numeric zero means unrun.
