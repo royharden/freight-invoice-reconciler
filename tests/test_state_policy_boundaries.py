@@ -23,15 +23,27 @@ def test_onedrive_components_refuse_without_creation(tmp_path, component):
     assert not target.exists()
 
 
-def test_own_checkout_and_explicit_source_roots_refuse(tmp_path):
+def test_own_checkout_and_explicit_source_roots_refuse(tmp_path, monkeypatch):
     """what_bug_this_catches: caller forgetting the module's own checkout root."""
     checkout = Path(state_policy.__file__).parents[2]
-    with pytest.raises(ValueError, match="outside source"):
+    # what_bug_this_catches: master can violate OneDrive and source policies;
+    # refusal is required, but reason precedence must not depend on checkout root.
+    with pytest.raises(ValueError, match="outside (source|OneDrive)"):
         state_policy.validate_state_path(checkout / "new-state.db")
     supplied = tmp_path / "other-source"
     supplied.mkdir()
+    target = supplied / "nested" / "state.db"
+    # Establish that this controlled path passes all non-source placement guards.
+    assert state_policy.validate_state_path(target) == target.resolve()
+    # Exercise automatic source exclusion outside OneDrive so its removal fails
+    # even when the actual checkout above is already excluded by OneDrive.
+    with monkeypatch.context() as patch:
+        patch.setattr(state_policy, "_SOURCE_ROOT", supplied)
+        with pytest.raises(ValueError, match="outside source"):
+            state_policy.validate_state_path(target)
     with pytest.raises(ValueError, match="outside source"):
-        state_policy.validate_state_path(supplied / "nested" / "state.db", forbidden_roots=(supplied,))
+        state_policy.validate_state_path(target, forbidden_roots=(supplied,))
+    assert not target.parent.exists()
 
 
 def test_missing_local_file_is_resolved_without_state_creation(tmp_path):
