@@ -56,6 +56,29 @@ def normalize(raw: str, normalizer_id: str):
         raise ValueError("invalid_field_text")
     if normalizer_id == "json-document-v1":
         return parse_document(raw)
+    if normalizer_id == "json-scalar-v1":
+        if len(raw) > 4_000:
+            raise ValueError("record_cell_limit")
+
+        def refuse_number(_):
+            raise ValueError("decimal_requires_string")
+
+        try:
+            value = json.loads(raw, parse_float=refuse_number, parse_constant=refuse_number)
+        except (json.JSONDecodeError, RecursionError) as exc:
+            raise ValueError("invalid_json_scalar") from exc
+        if type(value) not in (str, int, bool, type(None)):
+            raise ValueError("json_scalar_required")
+        if type(value) is str:
+            value.encode("utf-8", errors="strict")
+        return value
+    if normalizer_id.startswith("csv-cell:"):
+        from .records import decode_csv_cell
+
+        converter = normalizer_id[len("csv-cell:"):]
+        if not converter or converter.startswith("csv-cell:") or converter in {"json-document-v1", "json-scalar-v1"}:
+            raise ValueError("invalid_csv_normalizer")
+        return normalize(decode_csv_cell(raw), converter)
     if len(raw) > 500:
         raise ValueError("invalid_field_text")
     if normalizer_id == "string-v1":
