@@ -1,6 +1,6 @@
 # Integrated source interface index
 
-The original provisional seams have been reconciled in source. This index points to the owning documentation; it does not create another schema or pricing specification. Source construction is accepted; joined runtime behavior has not been exercised.
+The original provisional seams have been reconciled in source. This index points to the owning documentation; it does not create another schema or pricing specification. Selected joined native and offline Linux regressions and process journeys have executed; see ../validation/ROUND2-REPORT.md for exact revisions, outcomes and limits. Independent admission and broader production behavior remain unestablished.
 
 - [Domain](DOMAIN.md): contracts, strict money/time, select_contract, price_shipment, price_contracts, and semantic ENGINE_VERSION.
 - [Ingestion](INGESTION.md): original-byte source registry, structured JSON and JSON/CSV record/field proof, native PDF adapter, exact namespaced links, full-batch allocation, five-field link contexts, and trusted code callback.
