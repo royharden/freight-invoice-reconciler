@@ -10,7 +10,7 @@ requires-python = ">=3.12"
 dependencies = []
 
 [project.optional-dependencies]
-pdf = ["pypdf"]
+pdf = ["pdfplumber"]
 report = ["Jinja2>=3.1,<4"]
 
 [project.scripts]

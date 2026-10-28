@@ -2,9 +2,10 @@
 
 These policies intentionally omit product semantics; never tune them after outcomes.
 All arms consume the same already-extracted/linked observation bundle. A1 wire
-adapter: contracts carry carrier/effective_from/lanes/detention/liftgate; each lane
-has origin_zone/destination_zone/bands. Fuel rows carry carrier/publication_date/
-percentage. Billed detention units are decimal strings plus unit hour|minute|
+adapter uses actual contracts with carrier/effective_from/origin_zone/
+destination_zone/bands/detention/liftgate/fuel. Fuel rows carry publication_date/
+index_value; the latest index selects the newest contract's percentage bracket.
+Billed detention units are decimal strings plus unit hour|minute|
 increment; increment requires explicit billed_increment_minutes. This conversion
 is billed units, deliberately NOT elapsed time or free time.
 A1 requires explicit currency="USD" before any pricing; missing/non-USD abstains.
@@ -40,6 +41,9 @@ def _output(amount, reason, *, abstain=False):
 
 
 def _canonical(row):
+    if (row["code"] not in ("LH", "FS", "DETENTION", "LIFTGATE") or
+            type(row["stop_seq"]) is not int or row["stop_seq"] < 0):
+        raise ValueError("known charge and strict stop sequence required")
     issued = datetime.fromisoformat(row["invoice_issue_ts"])
     if issued.tzinfo is None or issued.utcoffset() is None:
         raise ValueError("offset invoice issue time required")
@@ -61,7 +65,7 @@ def a0(observations):
     for row in observations:
         if row.get("currency") != "USD":
             result[row["occurrence_id"]] = _output(0, "missing_or_non_usd_currency", abstain=True)
-        elif row.get("link_status") != "exact":
+        elif row.get("link_status") not in ("exact", "resolved"):
             result[row["occurrence_id"]] = _output(0, "link_not_exact", abstain=True)
         else:
             try:
@@ -116,25 +120,34 @@ def a1(observations, contracts, fuel_index, tolerance_cents=0):
         try:
             if row.get("currency") != "USD":
                 raise ValueError("missing_or_non_usd_currency")
-            if row.get("link_status") != "exact":
+            if row.get("link_status") not in ("exact", "resolved"):
                 raise ValueError("link_not_exact")
-            candidates = [contract for contract in contracts if contract["carrier"] == row["carrier"]]
+            candidates = [contract for contract in contracts
+                          if contract["carrier"] == row["carrier"] and
+                          contract["origin_zone"] == row["origin_zone"] and
+                          contract["destination_zone"] == row["destination_zone"]]
             newest = max(candidates, key=lambda contract: (contract["effective_from"], contract["contract_id"]))
+            if sum((contract["effective_from"], contract["contract_id"]) ==
+                   (newest["effective_from"], newest["contract_id"]) for contract in candidates) != 1:
+                raise ValueError("ambiguous newest contract")
             if row["code"] in ("LH", "FS"):
-                lanes = [lane for lane in newest["lanes"]
-                         if lane["origin_zone"] == row["origin_zone"] and
-                         lane["destination_zone"] == row["destination_zone"]]
-                if len(lanes) != 1:
-                    raise ValueError("ambiguous_lane")
-                first_band = lanes[0]["bands"][0]
-                linehaul = _money(_decimal(first_band["rate_per_cwt"]) * _decimal(row["weight_lb"]) / 100)
+                first_band = newest["bands"][0]
+                if type(row["weight_lb"]) is not int or row["weight_lb"] < 0:
+                    raise ValueError("strict integer pounds required")
+                linehaul = _money(_decimal(first_band["rate_per_cwt"]) * Decimal(row["weight_lb"]) / 100)
             if row["code"] == "LH":
                 expected = linehaul
             elif row["code"] == "FS":
-                publications = [entry for entry in fuel_index if entry["carrier"] == row["carrier"]]
-                latest = max(publications, key=lambda entry: entry["publication_date"])
+                latest = max(fuel_index, key=lambda entry: entry["publication_date"])
+                if sum(entry["publication_date"] == latest["publication_date"] for entry in fuel_index) != 1:
+                    raise ValueError("ambiguous latest fuel publication")
+                index = _decimal(latest["index_value"])
+                brackets = [bracket for bracket in newest["fuel"]["brackets"]
+                            if _decimal(bracket["low"]) <= index < _decimal(bracket["high"])]
+                if len(brackets) != 1:
+                    raise ValueError("ambiguous or absent latest percentage")
                 # Rounded own linehaul is the baseline fuel base; no pickup-date rule.
-                expected = int((Decimal(linehaul) * _decimal(latest["percentage"]) / 100)
+                expected = int((Decimal(linehaul) * _decimal(brackets[0]["percent"]) / 100)
                                .quantize(Decimal("1"), rounding=ROUND_HALF_UP))
             elif row["code"] == "DETENTION":
                 units = _decimal(row["billed_detention_units"])

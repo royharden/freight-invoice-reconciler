@@ -56,11 +56,58 @@ def _hydrate(bundle):
     return resolver, documents
 
 
-def _reconcile(documents, resolver, tolerance_cents=0):
+def _reconcile(documents, resolver, tolerance_cents=0, link_resolver=None):
     from .reconcile.reconcile import reconcile_batch
     return reconcile_batch(documents["contracts"], documents["shipments"], documents["invoices"],
                            documents["fuel_index"], sources=resolver,
-                           tolerance_cents=tolerance_cents)
+                           tolerance_cents=tolerance_cents, link_resolver=link_resolver)
+
+
+def _state_log(path):
+    from .review.log import DecisionLog
+    from .state_policy import validate_state_path
+    state = validate_state_path(path, forbidden_roots=(Path(__file__).resolve().parents[2],))
+    return DecisionLog(state)
+
+
+def _refresh(documents, resolver, log, tolerance_cents):
+    """Refresh the entire prelink set before resolving any stored human ruling."""
+    if not callable(getattr(log, "refresh_link_contexts", None)):
+        raise ValueError("complete link-context synchronization unavailable")
+    try:
+        baseline = _reconcile(documents, resolver, tolerance_cents)
+        contexts = {}
+        for finding in baseline:
+            context = finding.get("link_context")
+            if context is None:
+                continue
+            if not isinstance(context, dict) or not isinstance(context.get("context_id"), str):
+                raise ValueError("invalid link context")
+            cid = context["context_id"]
+            if cid in contexts:
+                raise ValueError("duplicate link context identity")
+            contexts[cid] = context
+        # The complete current set includes exact links and may be empty.
+        context_bindings = log.refresh_link_contexts(list(contexts.values()))
+    except (ValueError, KeyError, TypeError, ArithmeticError, RecursionError):
+        log.refresh_link_contexts([])
+        raise
+    findings = _reconcile(documents, resolver, tolerance_cents, log.resolve_link)
+    # Never register baseline monetary findings. That would create a spurious
+    # change/revert of a genuinely resolved finding on every refresh.
+    bindings = {item["finding_id"]: log.register_finding(item) for item in findings}
+    return baseline, findings, context_bindings, bindings
+
+
+def _link_finding(baseline, occurrence_id):
+    matches = [f for f in baseline if f.get("occurrence_id") == occurrence_id]
+    if len(matches) != 1 or not isinstance(matches[0].get("link_context"), dict):
+        raise ValueError("occurrence lacks unique actionable original-source context")
+    finding = matches[0]
+    if any(step.get("step") == "link" and step.get("shipment_id")
+           for step in finding.get("trace", []) if isinstance(step, dict)):
+        raise ValueError("exact automatic link has priority; manual ruling refused")
+    return finding
 
 
 def _builder(bundle):
@@ -85,15 +132,19 @@ def main(argv=None):
     parser = argparse.ArgumentParser(prog="freightrec")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("status", help="show admission and model status without effects")
-    for name in ("reconcile", "demo", "report", "prepare-review", "review", "draft"):
+    for name in ("reconcile", "demo", "report", "prepare-review", "review", "draft", "prepare-link", "link"):
         command = sub.add_parser(name)
         command.add_argument("--input", required=True, help="frozen builder JSON bundle")
         command.add_argument("--builder-only", action="store_true")
         command.add_argument("--out", required=True)
+        command.add_argument("--state", required=name in
+                             ("prepare-review", "review", "draft", "prepare-link", "link"),
+                             help="SQLite path outside repo/OneDrive; one current source batch")
         if name in ("prepare-review", "review", "draft"):
-            command.add_argument("--state", required=True, help="SQLite path outside repo/OneDrive")
             command.add_argument("--finding-id", required=True)
-        if name == "review":
+        if name in ("prepare-link", "link"):
+            command.add_argument("--occurrence-id", required=True)
+        if name in ("review", "link"):
             command.add_argument("--event", required=True, help="explicit full CAS intent JSON")
     args = parser.parse_args(args_list)
     if args.command == "status":
@@ -105,10 +156,22 @@ def main(argv=None):
         print(json.dumps({"status": "admission_pending", "reason": "independent prerequisites not accepted"}))
         return 2
     try:
-        bundle = _read(args.input)
-        _builder(bundle)
-        resolver, documents = _hydrate(bundle)
-        findings = _reconcile(documents, resolver, bundle.get("tolerance_cents", 0))
+        log = _state_log(args.state) if args.state else None
+        try:
+            bundle = _read(args.input)
+            _builder(bundle)
+            resolver, documents = _hydrate(bundle)
+        except (ValueError, KeyError, TypeError, OSError, RecursionError):
+            if log is not None:
+                if not callable(getattr(log, "refresh_link_contexts", None)):
+                    raise ValueError("complete link-context synchronization unavailable") from None
+                log.refresh_link_contexts([])
+            raise
+        tolerance = bundle.get("tolerance_cents", 0)
+        if log is None:
+            findings = _reconcile(documents, resolver, tolerance)
+        else:
+            baseline, findings, context_bindings, bindings = _refresh(documents, resolver, log, tolerance)
         if args.command in ("reconcile", "demo"):
             _write(args.out, {"data_origin": "builder_non_independent", "runtime_acceptance": False,
                               "benchmark_status": "not_run", "findings": findings})
@@ -116,22 +179,25 @@ def main(argv=None):
             from .review.report_html import report_html
             with Path(args.out).open("x", encoding="utf-8", newline="\n") as stream:
                 stream.write(report_html(findings))
+        elif args.command in ("prepare-link", "link"):
+            finding = _link_finding(baseline, args.occurrence_id)
+            context = finding["link_context"]
+            cid = context["context_id"]
+            if args.command == "prepare-link":
+                previous = log.latest_link(cid)
+                _write(args.out, {"context": context, "binding": {
+                    "context_id": cid, **context_bindings[cid],
+                    "previous_event_id": previous["event_id"] if previous else None}})
+            else:
+                event = _read(args.event)
+                if not isinstance(event, dict) or event.get("context_id") != cid:
+                    raise ValueError("link intent/context mismatch")
+                # Never infer actor kind or repair a submitted stale binding.
+                receipt = log.append_link(event)
+                _refresh(documents, resolver, log, tolerance)
+                _write(args.out, receipt)
         else:
-            from .review.log import DecisionLog
-            state = Path(args.state).resolve()
-            # Refuse obvious synced/repo paths, avoiding SQLite/WAL in OneDrive.
-            if any(part.lower() in {"onedrive", "src", ".git"} or
-                   part.lower().startswith("onedrive-") for part in state.parts):
-                raise ValueError("state must be outside OneDrive and repository")
-            for anchor in (Path.cwd().resolve(), Path(__file__).resolve().parents[2]):
-                if (anchor / "pyproject.toml").exists() and state.is_relative_to(anchor):
-                    raise ValueError("state must be outside repository")
-            if any((parent / ".git").exists() or (parent / "pyproject.toml").exists()
-                   for parent in state.parents):
-                raise ValueError("state must be outside repository")
-            log = DecisionLog(state)
             finding = _find(findings, args.finding_id)
-            bindings = {item["finding_id"]: log.register_finding(item) for item in findings}
             if args.command == "prepare-review":
                 previous = log.latest(args.finding_id)
                 _write(args.out, {"finding_id": args.finding_id,
@@ -152,7 +218,7 @@ def main(argv=None):
                 decision = log.latest(args.finding_id)
                 path = export_draft(finding, decision, resolver, args.out, decision_log=log)
                 print(str(path))
-    except (ValueError, KeyError, TypeError, OSError, ImportError, sqlite3.Error) as exc:
+    except (ValueError, KeyError, TypeError, OSError, ImportError, sqlite3.Error, RecursionError) as exc:
         print(json.dumps({"status": "refused", "reason": str(exc)}), file=sys.stderr)
         return 2
     return 0
