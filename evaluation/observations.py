@@ -8,7 +8,11 @@ actual shared link outcomes. No function here can authorize a manual link.
 from copy import deepcopy
 from dataclasses import dataclass
 from hashlib import sha256
+from importlib.metadata import PackageNotFoundError, version
 import json
+from pathlib import Path
+import platform
+import sys
 
 from freightrec.link import normalize_reference
 
@@ -17,6 +21,10 @@ from .components import connected_components
 from .metrics import cents
 
 ADAPTER_VERSION = "freightrec-observation-v1"
+ORIGINAL_BUNDLE_VERSION = "freightrec-observation-v2-originals"
+_V1_KEYS = {"adapter_version", "source_documents", "engine_version", "policy_version",
+            "tolerance_cents", "rows", "contracts", "fuel_index", "recorded_findings", "a2_attempt"}
+_V2_KEYS = _V1_KEYS | {"original_bundle", "links", "strata", "near_duplicate_ids", "runtime_edition"}
 _TRUTH_KEYS = {"reference_cents", "expected_cents", "oracle_cents", "gold", "gold_cents", "truth",
                "planted_error", "oracle_overcharge_cents"}
 
@@ -48,7 +56,7 @@ def _text(value):
 
 
 def _require_json_observation_sources(documents):
-    """PDF originals require a byte-retaining snapshot format we do not yet have.
+    """Keep the original v1 recording boundary JSON-only.
 
     Declining the complete recording is safer than giving a baseline parsed PDF
     facts while presenting those facts as replayable original JSON. Descriptor
@@ -100,11 +108,28 @@ class FrozenObservations:
     def load(self):
         if sha256(self.canonical_json.encode("utf-8")).hexdigest() != self.sha256:
             raise ValueError("frozen observation edition changed")
-        value = json.loads(self.canonical_json)
-        if value.get("adapter_version") != ADAPTER_VERSION:
-            raise ValueError("unsupported observation adapter edition")
-        _require_json_observation_sources(value.get("source_documents"))
-        return value
+        def pairs(items):
+            result = {}
+            for key, item in items:
+                if key in result:
+                    raise ValueError("duplicate frozen observation key")
+                result[key] = item
+            return result
+
+        def constant(_):
+            raise ValueError("nonfinite frozen observation number")
+
+        value = json.loads(self.canonical_json, object_pairs_hook=pairs, parse_constant=constant)
+        if type(value) is not dict:
+            raise ValueError("frozen observation object required")
+        if value.get("adapter_version") == ADAPTER_VERSION:
+            if set(value) != _V1_KEYS:
+                raise ValueError("unexpected v1 observation fields")
+            _require_json_observation_sources(value.get("source_documents"))
+            return value
+        if value.get("adapter_version") == ORIGINAL_BUNDLE_VERSION:
+            return _validate_original_recording(value)
+        raise ValueError("unsupported observation adapter edition")
 
 
 def _candidate_outputs(findings, rows, tolerance_cents):
@@ -146,9 +171,9 @@ def _candidate_outputs(findings, rows, tolerance_cents):
     return result
 
 
-def freeze_recording(documents, findings, links, strata, *, engine_version,
-                     policy_version, source_resolver, tolerance_cents=0,
-                     near_duplicate_ids=None):
+def _recording_payload(documents, findings, links, strata, *, engine_version,
+                       policy_version, source_resolver, tolerance_cents=0,
+                       near_duplicate_ids=None, allow_original_pdf=False):
     """Freeze verified source facts plus actual A2 outputs and shared link capture.
 
     documents is the same contracts/shipments/invoices/fuel_index mapping passed
@@ -166,7 +191,8 @@ def freeze_recording(documents, findings, links, strata, *, engine_version,
             not isinstance(documents[name], list) or
             any(not isinstance(item, dict) for item in documents[name]) for name in names):
         raise ValueError("complete original-source document collections required")
-    _require_json_observation_sources(documents)
+    if not allow_original_pdf:
+        _require_json_observation_sources(documents)
     _facts_only(documents)
     # Use the same original-source verifier as the product boundary. This is
     # observation parity, not an independent oracle or truth determination.
@@ -260,13 +286,124 @@ def freeze_recording(documents, findings, links, strata, *, engine_version,
                "contracts": contracts, "fuel_index": deepcopy(documents["fuel_index"]),
                "recorded_findings": deepcopy(findings),
                "a2_attempt": _candidate_outputs(findings, rows, tolerance_cents)}
+    return payload
+
+
+def _freeze(payload):
     encoded = _json(payload)
     return FrozenObservations(encoded, sha256(encoded.encode("utf-8")).hexdigest())
 
 
+def freeze_recording(documents, findings, links, strata, *, engine_version,
+                     policy_version, source_resolver, tolerance_cents=0,
+                     near_duplicate_ids=None):
+    """Unchanged JSON-only v1 capture; PDF injection remains unsupported."""
+    return _freeze(_recording_payload(
+        documents, findings, links, strata, engine_version=engine_version,
+        policy_version=policy_version, source_resolver=source_resolver,
+        tolerance_cents=tolerance_cents, near_duplicate_ids=near_duplicate_ids))
+
+
+def _runtime_edition():
+    """Local runtime closure, not package installation or historical attestation."""
+    import freightrec
+    packages = ("pdfplumber", "pdfminer-six", "pypdfium2", "pillow", "charset-normalizer",
+                "cryptography", "cffi", "pycparser", "tzdata")
+    try:
+        dependencies = {name: version(name) for name in packages}
+    except PackageNotFoundError as exc:
+        raise ValueError("observation runtime dependency unavailable") from exc
+    package_root = Path(freightrec.__file__).resolve().parent
+    source = {"freightrec/" + str(path.relative_to(package_root)).replace("\\", "/"):
+              sha256(path.read_bytes()).hexdigest() for path in sorted(package_root.rglob("*.py"))}
+    for name in ("observations.py", "arms.py", "components.py", "metrics.py"):
+        path = Path(__file__).resolve().with_name(name)
+        source["evaluation/" + name] = sha256(path.read_bytes()).hexdigest()
+    return {"python": list(sys.version_info[:3]), "implementation": platform.python_implementation(),
+            "platform": sys.platform, "dependencies": dependencies, "implementation_sha256": source}
+
+
+def _current_versions(engine_version, policy_version):
+    from freightrec.engine.engine import ENGINE_VERSION
+    from freightrec.reconcile.findings import POLICY_VERSION
+    if engine_version != ENGINE_VERSION or policy_version != POLICY_VERSION:
+        raise ValueError("observation engine/policy edition changed")
+
+
+def _original_bundle_envelope(bundle, tolerance):
+    """Validate retained metadata too: hydration returns only source documents."""
+    if type(bundle) is not dict:
+        raise ValueError("exact original bundle required")
+    if set(bundle) - {"contracts", "shipments", "invoices", "fuel_index",
+                      "data_origin", "tolerance_cents"}:
+        raise ValueError("unexpected original bundle fields")
+    # Preserve the codec's optional marker, but never allow ignored metadata
+    # to carry labels/derived answers into the exact-original replay payload.
+    if "data_origin" in bundle and (type(bundle["data_origin"]) is not str or
+                                    bundle["data_origin"] != "builder_non_independent"):
+        raise ValueError("original bundle data_origin must be builder_non_independent")
+    recorded = bundle.get("tolerance_cents", 0)
+    if type(tolerance) is not int or tolerance not in (0, 50, 100) or type(recorded) is not int or recorded != tolerance:
+        raise ValueError("original bundle and recording tolerance differ")
+
+
+def freeze_original_bundle_recording(original_bundle, documents, findings, links, strata, *,
+                                     engine_version, policy_version, source_resolver,
+                                     tolerance_cents=0, near_duplicate_ids=None):
+    """Opt-in v2: retain exact originals and verify the entire recorded source edition."""
+    from freightrec.bundles import hydrate_original_bundle
+    if source_resolver is None:
+        raise ValueError("current original source resolver required")
+    _current_versions(engine_version, policy_version)
+    _original_bundle_envelope(original_bundle, tolerance_cents)
+    originals = deepcopy(original_bundle)
+    # No new source registry or reconstructed JSON: rehydrate exact originals
+    # into the actual retained resolver and compare every binding/typed field.
+    resolver, fresh = hydrate_original_bundle(originals, resolver=source_resolver)
+    if resolver is not source_resolver or _json(fresh) != _json(documents):
+        raise ValueError("recorded original source edition differs")
+    payload = _recording_payload(
+        fresh, findings, links, strata, engine_version=engine_version, policy_version=policy_version,
+        source_resolver=resolver, tolerance_cents=tolerance_cents,
+        near_duplicate_ids=near_duplicate_ids, allow_original_pdf=True)
+    payload.update(adapter_version=ORIGINAL_BUNDLE_VERSION, original_bundle=originals,
+                   links=deepcopy(links), strata=deepcopy(strata),
+                   near_duplicate_ids={} if near_duplicate_ids is None else deepcopy(near_duplicate_ids),
+                   runtime_edition=_runtime_edition())
+    return _freeze(payload)
+
+
+def _validate_original_recording(value):
+    """Single strict v2 boundary used by every loading consumer."""
+    from freightrec.bundles import hydrate_original_bundle
+    if set(value) != _V2_KEYS:
+        raise ValueError("unexpected original observation fields")
+    _current_versions(value["engine_version"], value["policy_version"])
+    _original_bundle_envelope(value["original_bundle"], value["tolerance_cents"])
+    if _json(value["runtime_edition"]) != _json(_runtime_edition()):
+        raise ValueError("observation runtime/dependency edition changed")
+    # Worker unavailable/timeout/protocol refusal propagates without a fallback.
+    resolver, documents = hydrate_original_bundle(value["original_bundle"])
+    if _json(documents) != _json(value["source_documents"]):
+        raise ValueError("recorded original source edition differs")
+    expected = _recording_payload(
+        documents, value["recorded_findings"], value["links"], value["strata"],
+        engine_version=value["engine_version"], policy_version=value["policy_version"],
+        source_resolver=resolver, tolerance_cents=value["tolerance_cents"],
+        near_duplicate_ids=value["near_duplicate_ids"], allow_original_pdf=True)
+    expected["adapter_version"] = ORIGINAL_BUNDLE_VERSION
+    for key in _V1_KEYS:
+        if _json(value[key]) != _json(expected[key]):
+            raise ValueError("recorded observation derivation differs:" + key)
+    return value
+
+
 def product_input(snapshot):
     """Facts only for replay; persisted link authority still belongs to DecisionLog."""
-    documents = snapshot.load()["source_documents"]
+    value = snapshot.load()
+    if value["adapter_version"] == ORIGINAL_BUNDLE_VERSION:
+        return deepcopy(value["original_bundle"])
+    documents = value["source_documents"]
     _facts_only(documents)
     return documents
 

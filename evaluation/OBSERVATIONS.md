@@ -27,30 +27,65 @@ verify_document on every document with that resolver. A source-binding failure
 refuses the complete capture, never a successful subset. This shared check is
 observation parity, not independent evidence or a truth judgment.
 The adapter does not authenticate source authors or turn inferred PDF facts
-into original JSON. It does not run product extraction, linking or pricing.
+into original JSON. The v1 adapter does not run product extraction, linking or pricing. The explicit
+v2 adapter rehydrates originals through the canonical guarded source helper;
+it does not rerun linking or A2 pricing.
 Source dictionaries are copied without rewriting provenance. Original source
 proofs remain necessary when a caller later replays product input.
 
-### PDF capability boundary
+### Explicit original-bundle v2
 
-The CLI original-bundle codec supports strict original-PDF invoice descriptors,
-but this frozen JSON observation edition deliberately does **not** support PDF
-capture or replay. `freeze_recording` refuses the entire recording with a
-`ValueError` beginning `unsupported_source:` for a valid PDF descriptor or a
-PDF-bound invoice. Descriptor validation delegates to the same
-`freightrec.bundles.decode_pdf_descriptor` used by CLI hydration; malformed
-descriptors fail that canonical validation before the capability refusal.
+`freeze_recording` remains the JSON-only v1 API. Valid PDF descriptors and
+PDF-bound invoices refuse with `unsupported_source:` at capture and every
+loading consumer, including manually rehashed snapshots. Malformed descriptors,
+including `field_values: {}` or extra markers, fail canonical descriptor
+validation first. Existing valid JSON v1 recordings retain their format.
 
-`FrozenObservations.load`, `product_input`, `diagnostic_outputs` and
-`scoring_observations` also refuse PDF editions, including a manually rehashed
-snapshot. No arm receives parsed PDF facts represented as different original
-JSON. Keep the original PDF bytes and retained resolver with the CLI source
-bundle; do not serialize extracted invoice facts and register them as originals
-to bypass this boundary. Supporting a future PDF observation edition requires
-explicit byte-retaining replay semantics, not a reconstructed JSON substitute.
-The accepted original-JSON snapshot format and separate reference-label join
-remain unchanged. This is a capability refusal, not source authentication or a
-scientific independence guarantee.
+Use `freeze_original_bundle_recording(original_bundle, documents, findings,
+links, strata, *, engine_version, policy_version, source_resolver,
+tolerance_cents=0, near_duplicate_ids=None)` to opt into
+`freightrec-observation-v2-originals`. The bundle uses the same strict codec as
+CLI input. It retains exact original JSON strings and PDF base64, including their
+original bytes and SHA; only the outer snapshot container is canonicalized.
+Parsed PDF facts never become replacement original JSON.
+The v2 original envelope permits only the four source collections, optional
+`tolerance_cents`, and optional `data_origin`. When present, `data_origin` must
+be exactly the string `builder_non_independent`; nested metadata, other values
+and extra root fields refuse at capture and every loading consumer, even after
+rehashing. The adapter rejects contaminated originals without stripping fields
+or rewriting the original payload. An absent optional marker stays absent.
+
+Capture rehydrates the complete bundle into the supplied current source resolver
+and compares every bound document, typed field, source/page/quote pointer and
+parser/normalizer edition with the supplied captured documents. The resolver
+must be the actual current SourceResolver. The entire capture refuses on a
+mismatch; no successful subset is retained. Findings remain the actual supplied
+A2 attempts, including malformed attempts, rather than newly computed answers.
+
+Every v2 `load`, diagnostic, scoring and product-input call uses centralized
+strict validation: exact root fields/version, current engine/policy,
+original-bundle schema, captured tolerance and runtime edition. Replay freshly
+hydrates the originals through the canonical guarded parser and compares complete
+source bindings and recomputed observation derivations. A rehashed edit alone
+cannot bypass original-source validation. Worker unavailability or timeout
+refuses without fallback; current parser limits and the default five seconds
+remain unchanged.
+
+The runtime edition records Python/platform, local parser dependency versions and
+source-file hashes for the product and observation implementation. Changed
+dependencies, profiles or source editions require a new capture; replay never
+silently reclassifies the edition. This strict edition may refuse across
+platforms. It is a reproducibility commitment, not historical execution or
+author authentication. An external owner must retain the expected capture hash.
+Replacing both a fully consistent recording and its trusted hash creates a new
+recording; the unkeyed hash cannot authenticate a human or adjudicate truth.
+
+V2 `product_input` returns only a fresh copy of the exact original mixed bundle,
+with no recorded rows, findings, reference labels or manufactured link authority.
+Original payload strings/base64 remain unchanged. Each arm uses the same frozen
+occurrence/link/fact/unit/deadband observations; only external exact-key scoring
+joins references. V1 product replay retains its existing bound-document behavior
+and still requires the original resolver.
 
 Every original invoice line must have unambiguous carrier/invoice/line identity
 and strict nonnegative integer billed cents. The canonical occurrence ID uses
@@ -94,9 +129,10 @@ units without free-time/authorization/cap, and newest liftgate amount. The
 actual top-level lane contract and fuel-index wire shapes replace the earlier
 unqualified lanes/percentage adapter. No outcomes have informed this change.
 
-`product_input(snapshot)` returns only the original-source documents, with no
-reference labels or manufactured link authority. A replay still requires the
-original resolver and actual persisted link store outside this adapter.
+`product_input(snapshot)` returns bound documents for v1 and exact original
+bundle payloads for v2, with no reference labels or manufactured link authority.
+Product replay retains the actual persisted link store outside this adapter;
+v1 additionally requires its original resolver.
 
 Only `scoring_observations(snapshot, references)` joins external reference cents
 by the exact frozen occurrence key set. Explicit null means unanswerable;
@@ -121,3 +157,11 @@ exclusion, billed detention conversions, A1 latest-contract/index expected-value
 vectors and comprehensive denominator parity remain deferred. Graph/copy
 completeness, independent references, the full evaluation campaign and admission
 remain pending.
+
+The v2 builder controls capture the existing native PDF fixture, preserve its
+raw SHA/profile/exact quotes, replay the original mixed bundle and compare shared
+arms. They cover all consumers, rehashed source/derivation/schema/identity and
+runtime mutations, descriptor-extra bypasses, worker refusal, detached copies,
+reference exclusion, malformed A2 whole-arm invalidation and v1 compatibility.
+They establish source representation/replay only, with no independent dataset,
+performance claim or admission.
