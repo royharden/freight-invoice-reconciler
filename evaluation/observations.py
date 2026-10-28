@@ -47,6 +47,49 @@ def _text(value):
     return value
 
 
+def _require_json_observation_sources(documents):
+    """PDF originals require a byte-retaining snapshot format we do not yet have.
+
+    Declining the complete recording is safer than giving a baseline parsed PDF
+    facts while presenting those facts as replayable original JSON. Descriptor
+    validation stays in the same canonical codec as CLI hydration.
+    """
+    if not isinstance(documents, dict):
+        raise ValueError("complete original-source document collections required")
+    invoices = documents.get("invoices")
+    if not isinstance(invoices, list):
+        raise ValueError("complete original-source document collections required")
+
+    def pdf_pointer(value):
+        if isinstance(value, dict):
+            pointers = value.get("evidence_pointers", [])
+            fields = value.get("field_values", {})
+            candidates = list(pointers) if isinstance(pointers, list) else []
+            if isinstance(fields, dict):
+                candidates += [field.get("pointer") for field in fields.values()
+                               if isinstance(field, dict)]
+            if any(isinstance(pointer, dict) and
+                   isinstance(pointer.get("parser_profile"), str) and
+                   pointer["parser_profile"].startswith("pdfplumber-")
+                   for pointer in candidates):
+                return True
+            return any(pdf_pointer(child) for key, child in value.items()
+                       if key not in ("evidence_pointers", "field_values"))
+        if isinstance(value, list):
+            return any(pdf_pointer(child) for child in value)
+        return False
+
+    for invoice in invoices:
+        if not isinstance(invoice, dict):
+            continue  # The original recording shape/verifier rejects this.
+        if invoice.get("media_type") == "application/pdf" or "data_base64" in invoice:
+            from freightrec.bundles import decode_pdf_descriptor
+            decode_pdf_descriptor(invoice)
+            raise ValueError("unsupported_source: original PDF observation snapshots are not supported")
+        if pdf_pointer(invoice):
+            raise ValueError("unsupported_source: PDF-derived invoice observations require original PDF bytes")
+
+
 @dataclass(frozen=True)
 class FrozenObservations:
     """Immutable JSON edition; each consumer receives its own parsed copy."""
@@ -60,6 +103,7 @@ class FrozenObservations:
         value = json.loads(self.canonical_json)
         if value.get("adapter_version") != ADAPTER_VERSION:
             raise ValueError("unsupported observation adapter edition")
+        _require_json_observation_sources(value.get("source_documents"))
         return value
 
 
@@ -122,6 +166,7 @@ def freeze_recording(documents, findings, links, strata, *, engine_version,
             not isinstance(documents[name], list) or
             any(not isinstance(item, dict) for item in documents[name]) for name in names):
         raise ValueError("complete original-source document collections required")
+    _require_json_observation_sources(documents)
     _facts_only(documents)
     # Use the same original-source verifier as the product boundary. This is
     # observation parity, not an independent oracle or truth determination.

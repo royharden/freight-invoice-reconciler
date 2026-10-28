@@ -25,6 +25,12 @@ link outcomes and actual A2 attempts in one hash-bound immutable JSON edition.
 Every arm uses that edition; references join only in evaluation through an
 exact-keyset `scoring_observations` call. `product_input` returns facts only and
 does not manufacture persisted manual-link authority or original source bytes.
+The current frozen observation edition is original-JSON only. Valid original-PDF
+descriptors and PDF-bound invoice editions fail closed with `unsupported_source:`
+at capture, load, diagnostic and replay boundaries. CLI native-PDF input remains
+separate; recording never reconstructs parsed PDF facts as original JSON.
+Descriptor validation uses the canonical original-bundle codec. See the PDF
+capability boundary in OBSERVATIONS.md before attempting a PDF comparison.
 The baseline wire adapter is documented in `arms.py`; pricing stays separate
 from product charge helpers. A0 uses canonical offset timestamps,
 carrier/shipment/code/stop keys, invoice IDs and stable line IDs. Its designated

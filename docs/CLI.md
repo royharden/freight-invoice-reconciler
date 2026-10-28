@@ -9,8 +9,9 @@ admission, runtime unverified, A3 not_run and A4 not_run_guardrail.
 
 Construction input is a JSON object with `data_origin: builder_non_independent`,
 required `contracts`, `shipments`, `invoices` and `fuel_index` arrays, and optional
-`tolerance_cents` (0, 50 or 100; default 0). Every array item must be a string
-containing one complete original JSON fact document. Preserve its exact
+`tolerance_cents` (0, 50 or 100; default 0). Contracts, shipments and fuel_index
+items must be strings containing complete original JSON fact documents. Invoice
+items may be original JSON strings or the strict PDF descriptor below. Preserve exact
 whitespace, key order, newlines and string contents when embedding it in the
 outer bundle; the CLI encodes those decoded string contents directly as UTF-8.
 
@@ -22,8 +23,30 @@ numbers, nonfinite numbers and reserved provenance metadata (`source_sha256`,
 `evidence_pointers`, `field_values`) refuse. Decimal quantities use strings.
 Preparsed dictionaries, metadata-bound documents and the former separate
 `sources` bundle field refuse; do not serialize derived values to manufacture
-original evidence. Native PDF ingest is a separate operation, and this
-structured-JSON construction path does not claim PDF provenance.
+original evidence.
+
+An invoice PDF descriptor has exactly these three fields:
+
+```json
+{"media_type":"application/pdf","template_id":"freightrec-invoice-v1","data_base64":"<canonical base64 of original PDF bytes>"}
+```
+
+The base64 text must be canonical ASCII, with no whitespace or alternative pad
+bits. Encoded and decoded bounds are checked before parsing; raw PDFs are at most
+8,000,000 bytes and the existing outer JSON file limit is20,000,000 bytes. Extra
+fields, caller paths/hooks/limits, derived facts, source certificates and other
+media/template IDs refuse. No key/account placeholder is involved in this data
+encoding example. The actual builder example is native-pdf-bundle.json.
+
+The shared bundles codec decodes the exact original bytes and calls guarded
+ingest.extract with the SAME resolver. Only an actually verified successful
+invoice is accepted; it is never serialized and re-registered as original JSON.
+Pointers retain raw PDF SHA, isolated-v2 parser profile and archived Unicode
+page/quote hashes. The fixed grammar,5s worker default and resource guards remain
+unchanged. All CLI flows use this hydration; a failed PDF hydration retires prior
+stateful link contexts before refusal. Stateless refusals create no state.
+Frozen observation recording currently refuses PDF sources explicitly as
+unsupported_source; it never feeds A0/A1 reconstructed different originals.
 
 Keyless construction use:
 
