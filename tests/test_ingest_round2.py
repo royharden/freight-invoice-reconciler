@@ -190,7 +190,7 @@ def test_pdf_refuses_original_raster_multipage_encrypted_and_malformed(raw, reas
         pdftext.extract_pdf_pages(raw)
 
 
-def test_pdf_enforces_size_text_and_cooperative_elapsed_limits(monkeypatch):
+def test_pdf_enforces_size_text_and_explicit_limit_values():
     """what_bug_this_catches: adapter limits must be enforced, not merely documented."""
     raw = _pdf([INVOICE])
     with pytest.raises(ValueError, match="^source_byte_limit$"):
@@ -200,7 +200,5 @@ def test_pdf_enforces_size_text_and_cooperative_elapsed_limits(monkeypatch):
     pytest.importorskip("pdfplumber", reason="authorized pdfplumber dependency unavailable")
     with pytest.raises(ValueError, match="^page_text_limit$"):
         pdftext.extract_pdf_pages(raw, max_codepoints=10)
-    clock = iter([0, 6])
-    monkeypatch.setattr(pdftext, "monotonic", lambda: next(clock))
-    with pytest.raises(ValueError, match="^pdf_elapsed_limit$"):
-        pdftext.extract_pdf_pages(raw, max_seconds=5)
+    with pytest.raises(ValueError, match="^invalid_pdf_limits$"):
+        pdftext.extract_pdf_pages(raw, max_seconds=0)

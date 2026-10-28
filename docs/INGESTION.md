@@ -94,21 +94,54 @@ dependency closure. No PDF coordinates or tamperproof storage are claimed.
 Defaults bound original input to 8 MB, 100 archived pages and 200,000 codepoints
 per page; v1 invoice extraction accepts one page and at most 1,000 charge lines.
 The optional `pdfplumber` adapter validates the header, refuses encryption/malformed
-content, bounds pages/output size and checks elapsed time between page operations.
+content and parses only in an owned dedicated worker with required resource guards.
 Its profile includes the actual installed parser version. It has no OCR, document
 script, fetch, shell or rendering path. No dependency is installed by this source.
 
 Native builder tests exercise Unicode spans, newline preservation, normalization,
 sums/dates/units, malformed/encrypted/multipage and raster-only PDFs, unknown layouts,
 and changed source bytes/editions. Broader hostile-file/parser compatibility and
-deployment dependency/license qualification remain deferred. The elapsed check is
-cooperative and cannot interrupt a parser blocked within a page; hard CPU/memory
-isolation for untrusted PDF processing remains a later runtime activation item.
+deployment dependency/license qualification remain deferred.
 The adapter supports one native-text page only and fails closed if the underlying
 PDFMiner encryption-state compatibility seam or parser version is unavailable.
 The native regression environment uses INT's pinned pdfplumber 0.11.10 with
 Python 3.12.13. This validates only the tested builder cases, not general parser
-compatibility, hard resource isolation or public dependency/license adoption.
+compatibility or public dependency/license adoption.
+
+### Worker execution bounds and parser edition
+
+The parent starts its exact current Python interpreter with isolated/no-bytecode
+flags and the absolute `_pdf_worker.py` beside this checkout's adapter. No shell,
+caller executable/path hook, editable package lookup or inherited application
+environment is used. Windows receives only its system-directory loader variable;
+other application/credential variables are not copied or looked up. The worker
+receives bounded original bytes and explicit limits as strict JSON/base64, never
+file names or commands. Source byte/page/codepoint, encryption, native-text and
+one-page-layout checks remain in force. There is no parent parsing fallback.
+
+The parent enforces wall time independently of the parser, default five seconds
+(explicit positive integer limits up to 30 seconds). On timeout or stream overflow
+it kills only its owned worker, drains its pipes and waits with bounded cleanup.
+Protocol stdout is capped at `min(max_codepoints,200000)*6+4096` bytes and stderr at
+8192 bytes, with bounded incremental readers; malformed/duplicate-key/extra-field
+or unqualified results refuse. Normal cleanup may add bounded latency after the
+parsing deadline; no hard real-time scheduling guarantee is claimed.
+
+Before importing pdfplumber, the dedicated worker must establish a 512 MiB memory
+limit and CPU limit of `max_seconds+1`. Windows uses an own-process Job Object,
+verifies applied memory/user-CPU/active-process limits, limits active processes to
+one and retains its kill-on-close job handle through worker lifetime. Linux source
+requires both `RLIMIT_AS` and `RLIMIT_CPU`; unsupported or failed guard setup refuses
+before parser import. These guards never alter the parent, global host settings or
+another process. They are resource guards, not a security sandbox or general
+malicious-code containment. Windows guard setup is exercised on the native test
+host; Linux execution and destructive exhaustion stress checks remain deferred to
+INT's affected platform validation. No test deliberately exhausts host resources.
+
+Successful parsing uses edition `pdfplumber-<version>-isolated-v2`, distinct from
+the former cooperative `plain-v1` edition. Original-byte/page/quote hashes and exact
+text spans are still archived by SourceResolver. Existing editions are not silently
+replaced; callers must refresh current source/finding review dependencies.
 
 ## JSON and CSV record/field evidence
 
