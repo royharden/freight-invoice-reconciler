@@ -1,6 +1,8 @@
 # Local review and inert drafts
 
-Construction source only; runtime, SQLite behavior and isolation have not run.
+Selected local SQLite and inert-output regressions are in tests/test_review_round2.py.
+These are builder checks, not independent admission, human audit or production
+acceptance. Actual execution results belong to the run's validation handoff.
 
 `DecisionLog(path)` uses SQLite WAL at a caller-selected local state path outside
 OneDrive/repositories. Before opening any SQLite connection it calls the shared
@@ -68,7 +70,8 @@ current registration and append a new revision-bearing intent with a new request
 ID to approve again. Revision-bearing exact retries keep returning their original
 receipt, even after later registrations; export independently checks currency.
 
-Deferred activation: SQLite trigger/restart/replay/rollback and concurrent CAS;
+Full activation checks (selected cases covered by builder regressions): SQLite
+trigger/restart/replay/rollback and concurrent CAS;
 INSERT OR REPLACE preservation with recursive triggers disabled; A-to-B-to-A stale
 intent and approval refusal, including reopening an existing log;
 current dependency refresh across all mutation classes; real human versus scripted
@@ -128,8 +131,8 @@ all caller tokens. No baseline/final alternating monetary registrations. This
 additional batch seam is necessary to prevent absent-to-present approval revival.
 Caller source refresh is still required; storage cannot see unreported changes.
 
-Deferred link validation: schema migration/restart, direct replacement/update/delete
+Full link validation includes schema migration/restart, direct replacement/update/delete
 refusal, exact retries and conflicting requests, A-B-A/absence/reappearance, explicit
 unlink and later provisional denial, concurrent CAS/refresh/resolve, full joined
 CLI callback/namespace/auto-link behavior and source/target mutation invalidation.
-Only source construction/static review is authorized; no human session observed.
+Runtime checks require explicit run authorization; no human session observed.
