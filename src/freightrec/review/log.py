@@ -42,7 +42,8 @@ class DecisionLog:
     """
 
     def __init__(self, path):
-        self.path = str(path)
+        from ..state_policy import validate_state_path
+        self.path = str(validate_state_path(path))
         with closing(self._connect()) as db:
             db.executescript("""
                 PRAGMA journal_mode=WAL;
@@ -72,6 +73,23 @@ class DecisionLog:
                 CREATE TRIGGER IF NOT EXISTS decisions_no_delete BEFORE DELETE ON decisions
                     BEGIN SELECT RAISE(ABORT,'append-only decisions'); END;
             """)
+        from .link_log import LinkLog
+        self._links = LinkLog(self)
+
+    def register_link_context(self, context):
+        return self._links.register(context)
+
+    def refresh_link_contexts(self, contexts):
+        return self._links.refresh(contexts)
+
+    def latest_link(self, context_id):
+        return self._links.latest(context_id)
+
+    def append_link(self, intent):
+        return self._links.append(intent)
+
+    def resolve_link(self, context):
+        return self._links.resolve(context)
 
     def _connect(self):
         db = sqlite3.connect(self.path, isolation_level=None)

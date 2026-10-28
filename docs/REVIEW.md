@@ -3,7 +3,11 @@
 Construction source only; runtime, SQLite behavior and isolation have not run.
 
 `DecisionLog(path)` uses SQLite WAL at a caller-selected local state path outside
-OneDrive/repositories. `register_finding(finding)` appends a full canonical snapshot
+OneDrive/repositories. Before opening any SQLite connection it calls the shared
+state_policy.validate_state_path(path), owned by the domain lane; the helper must
+be integrated before constructor activation. See STATE.md for its path rules.
+No duplicate path validator or environment/credential lookup is added here.
+`register_finding(finding)` appends a full canonical snapshot
 when it differs from the latest snapshot and returns
 `{"finding_hash": <SHA-256>, "finding_revision": <positive integer>}`. An unchanged
 latest snapshot retains its revision; a change followed by a return to identical
@@ -72,3 +76,60 @@ review; stale and modified-number/pointer export refusal, including bool/float
 receipt and proposed/approved-cents tampering; exact resolver integration;
 HTML injection and socket-denied export; filesystem concurrent export behavior and
 caller directory trust. No runtime or product acceptance is claimed.
+
+## Source-bound manual links
+
+Link history is separate from finding/monetary history. DecisionLog exposes
+register_link_context(context), latest_link(context_id), append_link(intent),
+resolve_link(context). The bounded link_context object has exactly context_id,
+occurrence_id, carrier, reference, dependency_hash. All are nonempty text except
+reference, which may be an explicitly supplied empty string. No missing field,
+default context, null reference or extra field is accepted. Namespace normalization
+and original evidence validation belong to reconciliation; storage never guesses.
+
+register_link_context returns {context_hash,context_revision}. An unchanged latest
+context keeps its revision; change-and-revert creates a new revision. Link intents
+require request_id, context_id, context_hash, context_revision, previous_event_id
+(null or latest link event ID), action (link|unlink), actor_id, actor_kind. Optional
+note is text. Link requires nonempty target_shipment_id; unlink must omit it.
+Unknown fields refuse. CAS, exact canonical replay, conflicting request refusal,
+and update/delete/replacement protections mirror the monetary store on independent
+link_contexts/link_rulings tables. Request and event IDs are local to link history.
+Historical exact replay returns its original receipt and never restores authority.
+
+resolve_link only returns the latest HUMAN link target for the exact currently
+registered context/hash/revision. Missing, retired, changed, unlinked or provisional
+rulings return no target. Malformed contexts refuse. A later provisional event also
+blocks an earlier human link. Local actor kind is attribution only, not proof of
+human identity. Link records never authorize a dispute or draft; DL2 must uniquely
+validate a returned target against current original shipments in the same carrier
+namespace, preserve exact auto-link priority, and bind any applied target to final
+finding dependency. Legacy action=link monetary-history events are retained but
+are not consulted for resolution.
+
+### Complete refresh and disappearance
+
+The four single-context methods cannot observe that a context disappeared or lost
+provenance. The CLI must additionally use refresh_link_contexts(contexts), passing
+the COMPLETE list of actionable baseline contexts from the current original batch,
+including exact auto-linked occurrences. This atomic helper registers present
+contexts, appends null-snapshot tombstone revisions for absent contexts, and returns
+{context_id: {context_hash,context_revision}}. Empty list explicitly retires all;
+malformed/duplicate lists refuse before writing. Use one state database per active
+input workspace/batch scope. A subset is not a complete refresh. If baseline input
+validation refuses entirely, the caller must retire the set with an explicit empty
+refresh before refusing the command; it must never resolve links on that input.
+Returning after an absent/invalid-source interval requires a fresh human ruling.
+
+CLI order: hydrate original sources; reconcile without manual links; complete
+refresh; reconcile with log.resolve_link; register FINAL findings only. Preparing
+link emits context binding plus latest_link event CAS; submitting intent preserves
+all caller tokens. No baseline/final alternating monetary registrations. This
+additional batch seam is necessary to prevent absent-to-present approval revival.
+Caller source refresh is still required; storage cannot see unreported changes.
+
+Deferred link validation: schema migration/restart, direct replacement/update/delete
+refusal, exact retries and conflicting requests, A-B-A/absence/reappearance, explicit
+unlink and later provisional denial, concurrent CAS/refresh/resolve, full joined
+CLI callback/namespace/auto-link behavior and source/target mutation invalidation.
+Only source construction/static review is authorized; no human session observed.
