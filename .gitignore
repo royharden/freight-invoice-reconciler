@@ -7,3 +7,17 @@ demo-out/
 build/
 dist/
 *.egg-info/
+
+# Local credentials and generated artifacts
+.env
+.env.*
+.creds/
+ArchiveManager-creds.txt
+*.pem
+*.key
+*.p12
+*.pfx
+node_modules/
+*.zip
+*.tar
+*.tar.gz
