@@ -36,24 +36,9 @@ def _write(path, value):
 
 
 def _hydrate(bundle):
-    """Archive original JSON bytes and retain their bound values together."""
-    from .sources.registry import SourceResolver
-    collections = ("contracts", "shipments", "invoices", "fuel_index")
-    if not isinstance(bundle, dict) or set(bundle) - {
-            "data_origin", "tolerance_cents", *collections}:
-        raise ValueError("unsupported construction bundle fields")
-    for name in collections:
-        originals = bundle.get(name)
-        if not isinstance(originals, list) or any(not isinstance(raw, str) for raw in originals):
-            raise ValueError(f"{name} must be a list of original JSON strings")
-    resolver = SourceResolver()
-    documents = {}
-    for name in collections:
-        # Encode original string contents directly. Never serialize parsed or
-        # metadata-bound values and present that reconstruction as original.
-        documents[name] = [resolver.register_document(raw.encode("utf-8"))
-                           for raw in bundle[name]]
-    return resolver, documents
+    """Use the one original JSON/PDF codec; never reconstruct parsed originals."""
+    from .bundles import hydrate_original_bundle
+    return hydrate_original_bundle(bundle)
 
 
 def _reconcile(documents, resolver, tolerance_cents=0, link_resolver=None):

@@ -35,3 +35,14 @@ Original fixtures remain
 unchanged; the changed-source control is an explicitly new builder edition.
 Every intent is agent_provisional; a refused draft is the expected outcome. Its
 result is one builder process journey, never independent admission or a benchmark.
+
+`make_builder_pdf.py` authors the deterministic native-invoice-v1.pdf and its
+base64 bundle using only original source text and stdlib PDF objects. It preserves
+identical existing files and refuses to replace a different edition.
+
+`pdf_cli_smoke.py --source-revision <exact candidate> --artifacts <new local directory>`
+runs ONE actual CLI `report` process for that original PDF bundle. It retains raw
+stdout/stderr and report hashes, then uses the SAME original descriptor through
+guarded hydration to verify the reported raw-PDF/page/quote pointers. The parser's
+own isolated worker runs normally; no timeout/profile/guard is changed. No actor,
+approved draft, model, network, independent source or benchmark is introduced.

@@ -31,6 +31,27 @@ into original JSON. It does not run product extraction, linking or pricing.
 Source dictionaries are copied without rewriting provenance. Original source
 proofs remain necessary when a caller later replays product input.
 
+### PDF capability boundary
+
+The CLI original-bundle codec supports strict original-PDF invoice descriptors,
+but this frozen JSON observation edition deliberately does **not** support PDF
+capture or replay. `freeze_recording` refuses the entire recording with a
+`ValueError` beginning `unsupported_source:` for a valid PDF descriptor or a
+PDF-bound invoice. Descriptor validation delegates to the same
+`freightrec.bundles.decode_pdf_descriptor` used by CLI hydration; malformed
+descriptors fail that canonical validation before the capability refusal.
+
+`FrozenObservations.load`, `product_input`, `diagnostic_outputs` and
+`scoring_observations` also refuse PDF editions, including a manually rehashed
+snapshot. No arm receives parsed PDF facts represented as different original
+JSON. Keep the original PDF bytes and retained resolver with the CLI source
+bundle; do not serialize extracted invoice facts and register them as originals
+to bypass this boundary. Supporting a future PDF observation edition requires
+explicit byte-retaining replay semantics, not a reconstructed JSON substitute.
+The accepted original-JSON snapshot format and separate reference-label join
+remain unchanged. This is a capability refusal, not source authentication or a
+scientific independence guarantee.
+
 Every original invoice line must have unambiguous carrier/invoice/line identity
 and strict nonnegative integer billed cents. The canonical occurrence ID uses
 DL2's normalized carrier namespace and SHA-256 of `{identity, ordinal:0}`.
