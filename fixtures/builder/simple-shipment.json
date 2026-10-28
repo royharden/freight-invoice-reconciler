@@ -1,0 +1,16 @@
+{
+  "data_origin": "builder_non_independent",
+  "contracts": [
+    "{\n  \"contract_id\": \"BUILDER-CONTRACT-1\",\n  \"carrier\": \"Saffron Meadow Demo Carrier\",\n  \"effective_from\": \"2026-01-01\",\n  \"effective_to\": \"2026-02-01\",\n  \"basis\": \"pickup\",\n  \"origin_zone\": \"MEADOW-A\",\n  \"destination_zone\": \"MEADOW-B\",\n  \"clause_id\": \"BUILDER-RATE-1\",\n  \"bands\": [\n    {\n      \"min_lb\": 0,\n      \"max_lb\": 10000,\n      \"rate_per_cwt\": \"12.50\"\n    }\n  ],\n  \"minimum_cents\": 10000,\n  \"fuel\": {\n    \"clause_id\": \"BUILDER-FUEL-1\",\n    \"brackets\": [\n      {\n        \"low\": \"0\",\n        \"high\": \"10\",\n        \"percent\": \"10\"\n      }\n    ]\n  },\n  \"detention\": {\n    \"clause_id\": \"BUILDER-DETENTION-1\",\n    \"free_minutes\": 60,\n    \"increment_minutes\": 15,\n    \"max_billable_minutes\": 120,\n    \"hourly_rate\": \"60.00\",\n    \"allow_without_preauthorization\": false\n  },\n  \"liftgate\": {\n    \"clause_id\": \"BUILDER-LIFTGATE-1\",\n    \"amount_cents\": 5000,\n    \"requires_authorization\": true\n  },\n  \"accessorial_cap_cents\": 15000,\n  \"accessorial_priority\": [\n    \"DETENTION\",\n    \"LIFTGATE\"\n  ]\n}\n"
+  ],
+  "shipments": [
+    "{\n  \"carrier\": \"Saffron Meadow Demo Carrier\",\n  \"shipment_id\": \"BUILDER-SHIPMENT-1\",\n  \"reference\": \"BUILDER-SHIPMENT-1\",\n  \"origin_zone\": \"MEADOW-A\",\n  \"destination_zone\": \"MEADOW-B\",\n  \"weight_lb\": 1000,\n  \"pickup_ts\": \"2026-01-05T09:00:00+00:00\",\n  \"pickup_timezone\": \"UTC\",\n  \"delivery_ts\": \"2026-01-06T11:00:00+00:00\",\n  \"delivery_timezone\": \"UTC\",\n  \"stops\": [\n    {\n      \"stop_seq\": 1,\n      \"timezone\": \"UTC\",\n      \"arrive_ts\": \"2026-01-06T09:00:00+00:00\",\n      \"depart_ts\": \"2026-01-06T11:00:00+00:00\",\n      \"detention_authorized\": true,\n      \"liftgate_requested\": false,\n      \"liftgate_authorized\": false,\n      \"liftgate_performed\": false\n    }\n  ]\n}\n"
+  ],
+  "fuel_index": [
+    "{\n  \"publication_date\": \"2026-01-05\",\n  \"index_value\": \"3.50\"\n}\n"
+  ],
+  "invoices": [
+    "{\n  \"carrier\": \"Saffron Meadow Demo Carrier\",\n  \"invoice_id\": \"BUILDER-INVOICE-1\",\n  \"invoice_issue_ts\": \"2026-01-07T12:00:00+00:00\",\n  \"lines\": [\n    {\n      \"line_id\": \"BUILDER-LH\",\n      \"shipment_ref\": \"BUILDER-SHIPMENT-1\",\n      \"code\": \"LH\",\n      \"stop_seq\": 0,\n      \"billed_cents\": 140000,\n      \"currency\": \"USD\"\n    },\n    {\n      \"line_id\": \"BUILDER-FS\",\n      \"shipment_ref\": \"BUILDER-SHIPMENT-1\",\n      \"code\": \"FS\",\n      \"stop_seq\": 0,\n      \"billed_cents\": 14000,\n      \"currency\": \"USD\"\n    },\n    {\n      \"line_id\": \"BUILDER-DET\",\n      \"shipment_ref\": \"BUILDER-SHIPMENT-1\",\n      \"code\": \"DETENTION\",\n      \"stop_seq\": 1,\n      \"billed_cents\": 19500,\n      \"currency\": \"USD\"\n    }\n  ],\n  \"currency\": \"USD\",\n  \"total_cents\": 173500\n}\n"
+  ],
+  "tolerance_cents": 0
+}

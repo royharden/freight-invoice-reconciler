@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "freight-invoice-reconciler"
+version = "0.1.0"
+description = "Keyless synthetic freight reconciliation construction"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.optional-dependencies]
+pdf = ["pypdf"]
+report = ["Jinja2>=3.1,<4"]
+
+[project.scripts]
+freightrec = "freightrec.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

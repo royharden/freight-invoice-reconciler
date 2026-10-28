@@ -1,0 +1,76 @@
+# Evaluation source
+
+Builder-authored tools from promoted `PLAN-M13-v1.md` sections 7–8. These files
+have not been executed in the Dirty construction pass. They establish no data
+independence, admission, benchmark results, confidence intervals or human review.
+
+`arms.a0` and `arms.a1` implement the frozen deliberately limited policies.
+`metrics.score_arm` requires one explicit output per occurrence and invalidates
+the whole arm on malformed output. `bootstrap.raw_bootstrap` and
+`bootstrap.paired_bootstrap` resample whole connected components with replacement
+inside fixed strata and report raw C2/FD/MO dollar/rate intervals and paired deltas,
+degeneracy/zero denominators without invented intervals. Component IDs and
+stratum assignments must be supplied by the frozen, independently checked split;
+the scorer does not infer or certify graph connectivity. `components.connected_components`
+joins externally supplied shipment/invoice/duplicate links and supplied exact/near-copy
+identities; `inspect_splits` flags any such component crossing splits. Completeness of
+the input graph and near-copy manifest remains an independent review prerequisite.
+
+The baseline observation adapter is documented in `arms.py`; it is deliberately
+separate from product pricing helpers. A0 uses canonical offset timestamps,
+carrier/shipment/code/stop keys, invoice IDs and stable line IDs. Its designated
+residual line is lexically last `(line_id, occurrence_id)` within the invoice;
+every flattened observation row must repeat the actual invoice `total_cents`
+(no `invoice_total_cents` alias) and carry explicit `currency: "USD"`. Missing or
+non-USD currency abstains and prevents an invoice arithmetic proposal; no currency
+default is supplied. Missing/conflicting totals
+make the designated arithmetic outcome abstain. An independently known full
+duplicate proposal survives with a residual-abstained marker. A duplicate proposal
+takes priority. A1 uses newest `(effective_from, contract_id)`, first listed lane band,
+and latest fuel publication, regardless of shipment date. Detention billed units
+have explicit decimal-string hours/minutes/increments, never inferred from elapsed
+time. A1 requires explicit row `currency: "USD"` before pricing; missing/non-USD
+currency abstains without a monetary proposal. Its declared observation adapter remains source-only and has not been
+qualified against the actual domain parser. Supply the same frozen extraction/link
+observations to every arm. No baseline
+policy may change after freeze without a new preregistration.
+
+`sizing.n_req` returns `{status, value, reason}`: finite values are integers;
+infinite or unidentified requirements have `value: null` and an explicit reason.
+`sizing.analytic_policy` retains those records alongside uncapped targets and caps.
+It implements the preregistered analytic formula and dev stop.
+`simulate_precision` is expensive, source-only nested design simulation on the 80
+H-authored PUBLIC dev components; defaults are 1000 simulations and 10,000 inner
+draws for each candidate N. All widths and indeterminate samples are retained.
+Seeds here are proposed source constants until J records the actual pre-hidden
+freeze. Its analytic target accepts a finite nonnegative number or the explicit
+`h_out_analytic_requirement` record; booleans, NaN and bare infinity are rejected.
+Nonfinite requirements cannot qualify a simulated size. Provenance of the public-H
+subset is an external prerequisite.
+
+`report.not_run_report` exposes unrun result cells.
+`run_eval.run_development` accepts retained external outputs for diagnostics;
+it retains raw intervals, paired comparisons, invalid-arm errors/attempts and
+diagnostic gates. `report.development_report(run, *, sizing=None)` maps that
+retained result to measured dev rows, interval/threshold/degeneracy tables and
+failure records without rerunning calculations. Unmeasured ancillary diagnostics
+remain `not_measured`; independent gates and both H slices remain pending.
+`report.markdown`, `jsonl` and `report_json` render the report with strict JSON
+numbers (`allow_nan=False`). JSONL uses `arm_result` records with a `row`, plus one
+`report_section` record per other top-level field with `section` and `value`, so
+gates, deltas, sizing, failure records and retained run artifacts are not dropped.
+Invalid attempted NaN/infinity floats use explicit `invalid_nonfinite_float`
+tagged objects in the report; the original attempt remains in the retained run.
+`run_confirmatory` refuses. Admission inspection only checks external record
+structure and always leaves GO pending for actual J/human/Roy dispositions.
+No custody-opening, oracle, heldout generator, independent gold, scoring campaign
+or provider transport is implemented. A3 is not run; A4 is status only and disabled.
+
+Deferred validation: scorer controls (partial proposal, all-abstain, selective
+abstain, negative/float/bool/above-billed/missing), baseline vectors, whole-component
+resampling and denominator parity, degeneracy, zero denominators, sizing simulation
+correctness/performance, strict JSON/JSONL round trips, missing/conflicting-total
+A0 residual/duplicate branches, raw/delta interval parity and external evalkit
+comparison. Full confirmatory gates,
+independent references/mutants, trap/injection/audit results, custody and real human
+spot-checks remain pending; no numeric zero means unrun.
