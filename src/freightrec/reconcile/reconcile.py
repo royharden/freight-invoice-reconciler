@@ -340,7 +340,8 @@ def reconcile_batch(
             "expected_cents": expected, "disputed_cents": disputed,
             "verdict": verdict, "reason_code": reason, "trace": trace,
             "clause_id": entitlement.get("clause_id") if entitlement else None,
-            "evidence_pointers": pointers, "missing_facts": sorted(set(errors)),
+            "evidence_pointers": [value for _, value in sorted({canonical(pointer): pointer for pointer in pointers}.items())],
+            "missing_facts": sorted(set(errors)),
             "owner_to_ask": "source_owner" if errors else None,
         })
     return sorted(findings, key=lambda finding: finding["occurrence_id"])

@@ -1,7 +1,7 @@
 # Bounded invoice ingestion and exact evidence
 
-Construction source only: no parser, PDF dependency or runtime behavior has been
-executed or qualified. This adapter accepts one explicit invoice layout. Other
+Scoped native builder regressions exercise source, parser and reconciliation
+behavior; they are not independent evaluation or admission. This adapter accepts one explicit invoice layout. Other
 layouts, scanned PDFs, OCR, continuation pages and unknown descriptions refuse.
 
 `freightrec.ingest.extract(document_slice)` accepts a dictionary with
@@ -98,18 +98,17 @@ content, bounds pages/output size and checks elapsed time between page operation
 Its profile includes the actual installed parser version. It has no OCR, document
 script, fetch, shell or rendering path. No dependency is installed by this source.
 
-Deferred validation: install/pin/qualify the optional PDF parser under later
-authorization; verify native/PDF Unicode spans, newline changes, deterministic
-normalization round trips, sums/dates/units, malformed/encrypted/oversize files,
-unknown layouts/descriptions and changed bytes/editions. The elapsed check is
+Native builder tests exercise Unicode spans, newline preservation, normalization,
+sums/dates/units, malformed/encrypted/multipage and raster-only PDFs, unknown layouts,
+and changed source bytes/editions. Broader hostile-file/parser compatibility and
+deployment dependency/license qualification remain deferred. The elapsed check is
 cooperative and cannot interrupt a parser blocked within a page; hard CPU/memory
 isolation for untrusted PDF processing remains a later runtime activation item.
 The adapter supports one native-text page only and fails closed if the underlying
 PDFMiner encryption-state compatibility seam or parser version is unavailable.
-Parser/version compatibility, encryption behavior and time/memory limits have not
-been exercised; no dependency or license has been installed or adopted. Runtime
-validation of tampered values, types, quotes, missing leaves and structured payload
-mutations is deferred under the current static-only authorization.
+The native regression environment uses INT's pinned pdfplumber 0.11.10 with
+Python 3.12.13. This validates only the tested builder cases, not general parser
+compatibility, hard resource isolation or public dependency/license adoption.
 
 ## JSON and CSV record/field evidence
 
@@ -135,8 +134,9 @@ record keys, floats, mismatched schemas, unsupported nested records and ambiguou
 syntax refuse. Empty CSV lexemes refuse; explicit `null` with `null-v1` represents
 unknown when that column's declared schema permits it. A flat record is not an
 invoice-assembly rule or an independent truth source. Whole-document JSON evidence
-remains compatible with the existing CLI. Runtime parser/Unicode/escape/changed
-source/record/normalizer and refusal vectors are deferred.
+remains compatible with the existing CLI. Native builder tests cover lexical
+Unicode/escape boundaries, changed records/conversions and explicit refusal paths;
+broader untrusted-format and resource qualification remains deferred.
 
 ## Linking, batch allocation and findings
 
@@ -192,15 +192,19 @@ changed facts keep the ID but invalidate its dependency hash and review binding.
 
 `evidence_pointers` includes complete verified invoice, line, shipment, contract,
 fuel and clause evidence. Whole native JSON pointers cover every contained clause.
+Returned pointers are sorted and deduplicated by their complete canonical identity,
+so equivalent input/certificate permutations preserve the full finding snapshot as
+well as its dependency hash. Native builder regressions cover this review-binding
+boundary, duplicate allocation without undercharge netting, source mutation, links
+and real parser refusals; they supply no independent evaluation or admission evidence.
 Findings retain clause ID, arithmetic/allocation trace, missing facts and an owner
 to ask. Consumers refresh original inputs and reconciliation before human review
 or inert draft export; stored findings cannot observe upstream changes themselves.
 
-Deferred joined checks: canonical input permutations, duplicate invoice/line/PRO
-collisions, typo and cross-carrier refusal, contract gap/overlap, missing evidence,
-typed-value/source mutation, engine/policy revision invalidation, cap ordering,
-duplicate plus undercharge, tolerance boundaries and DL3 stale-approval/draft joins.
-No parser, pricing, reconciliation or draft behavior has been executed here.
+Native builder tests exercise canonical input/certificate permutations, duplicate
+allocation, typo/cross-carrier refusal, source mutation, cap ordering with duplicate
+and undercharge, and tolerance boundaries. The scoped tests do not establish a
+combined CLI/SQLite/draft journey, independent benchmark, admission or Docker parity.
 
 ## Source-bound link contexts and local rulings
 
@@ -230,7 +234,8 @@ originals with the persisted-human-link resolver. Only final findings enter mone
 review. The store/CLI must also retire formerly current contexts absent from the new
 valid set, including invalid/removed occurrences, so source disappearance and return
 cannot revive old rulings. That shared store/CLI absence API is INT-owned; DL2 emits
-no fabricated contexts for invalid sources. Deferred checks include exact-link
-priority, baseline/resolved context equality, callback rejection, cross-carrier and
-duplicate targets, A-B-A/absence staleness, source-policy-engine changes, unlink and
-provisional denial, and subsequent monetary review/draft separation.
+no fabricated contexts for invalid sources. Native producer tests exercise exact-link
+priority, baseline/resolved context equality, callback rejection and cross-carrier,
+duplicate or unverified targets. Joined A-B-A/absence retirement, unlink/provisional
+denial and subsequent monetary review/draft behavior remain the store/CLI owners'
+validation scope; no observed human session or independent acceptance is implied.
