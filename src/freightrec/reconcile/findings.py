@@ -3,7 +3,7 @@
 import hashlib
 import json
 
-POLICY_VERSION = "freightrec-reconcile-v1"
+POLICY_VERSION = "freightrec-reconcile-v2-human-links"
 
 
 def canonical(value: object) -> str:

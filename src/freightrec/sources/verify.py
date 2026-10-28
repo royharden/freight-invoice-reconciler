@@ -3,7 +3,7 @@
 import re
 
 from .normalize import normalize, validate_payload
-from .registry import SourceResolver, SpanPointer
+from .registry import SourceResolver
 
 
 def _same(left, right) -> bool:
@@ -58,22 +58,34 @@ def verify_document(document: dict, resolver: SourceResolver) -> list[dict]:
     if not payload:
         raise ValueError("empty_document")
     pointers = []
+    record_identities = set()
+    record_pointer_count = 0
 
-    def verify_field(field):
+    def verify_field(field, path=None):
+        nonlocal record_pointer_count
         if type(field) is not dict or set(field) != {"raw_quote", "typed_value", "normalizer_id", "method", "pointer"}:
             raise ValueError("invalid_field_value")
         if (type(field["method"]) is not str
-                or field["method"] not in {"freightrec-invoice-v1", "native-field-v1", "native-json-v1"}):
+                or field["method"] not in {"freightrec-invoice-v1", "native-field-v1", "native-json-v1",
+                                           "native-json-record-v1", "native-csv-record-v1"}):
             raise ValueError("unknown_extraction_method")
         pointer = field["pointer"]
         if type(pointer) is not dict:
             raise ValueError("invalid_pointer_shape")
-        try:
-            canonical_pointer = SpanPointer(**pointer).to_dict()
-        except TypeError as exc:
-            raise ValueError("invalid_pointer_shape") from exc
+        canonical_pointer = resolver.canonical_pointer(pointer)
         if resolver.resolve(canonical_pointer) != field["raw_quote"]:
             raise ValueError("raw_quote_mismatch")
+        if "record_format" in canonical_pointer:
+            if (path != canonical_pointer["field"]
+                    or field["normalizer_id"] != canonical_pointer["normalizer_id"]
+                    or field["method"] != f"native-{canonical_pointer['record_format']}-record-v1"):
+                raise ValueError("record_field_conversion_changed")
+            record_identities.add((canonical_pointer["source_sha256"], canonical_pointer["parser_profile"],
+                                   canonical_pointer["record_index"], canonical_pointer["record_key"],
+                                   canonical_pointer["key_field"]))
+            record_pointer_count += 1
+        elif field["method"] in {"native-json-record-v1", "native-csv-record-v1"}:
+            raise ValueError("record_field_pointer_required")
         if ("source_sha256" in document
                 and pointer["source_sha256"] != document["source_sha256"]):
             raise ValueError("source_metadata_mismatch")
@@ -118,8 +130,12 @@ def verify_document(document: dict, resolver: SourceResolver) -> list[dict]:
             field = fields[path]
             if type(field) is dict and field.get("normalizer_id") == "json-document-v1":
                 raise ValueError("document_normalizer_requires_root_binding")
-            if not _same(verify_field(field), underlying):
+            if not _same(verify_field(field, path), underlying):
                 raise ValueError("underlying_value_mismatch")
+        if record_pointer_count and (len(record_identities) != 1 or record_pointer_count != len(fields)):
+            raise ValueError("mixed_record_bindings")
+        if record_pointer_count and set(fields) != set(resolver.record_fields(pointers[0])):
+            raise ValueError("incomplete_original_record")
     for pointer in declared_pointers:
         if type(pointer) is not dict or not any(_same(pointer, p) for p in pointers):
             raise ValueError("unbound_evidence_pointer")

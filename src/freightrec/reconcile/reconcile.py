@@ -3,6 +3,7 @@
 from collections import Counter
 
 from ..link import link_shipment, normalize_reference
+from ..link.link import resolve_target
 from ..sources import verify_document
 from .allocate import allocation_key, issue_time
 from .findings import POLICY_VERSION, canonical, cents, classify, digest
@@ -66,6 +67,7 @@ def _binding_identity(document: dict) -> dict:
 def reconcile_batch(
     contracts: list[dict], shipments: list[dict], invoices: list[dict],
     fuel_index: list[dict], sources=None, tolerance_cents: int = 0,
+    link_resolver=None,
 ) -> list[dict]:
     """Allocate each entitlement once across the complete supplied invoice batch.
 
@@ -75,6 +77,8 @@ def reconcile_batch(
     """
     if type(tolerance_cents) is not int or tolerance_cents not in (0, 50, 100):
         raise ValueError("tolerance_must_be_0_50_or_100_cents")
+    if link_resolver is not None and not callable(link_resolver):
+        raise ValueError("link_resolver_must_be_code_callback")
     from ..engine.engine import ENGINE_VERSION, price_contracts
     if not isinstance(ENGINE_VERSION, str) or not ENGINE_VERSION:
         raise ValueError("engine_version_required")
@@ -116,7 +120,7 @@ def reconcile_batch(
         "fuel_index": _sorted([dependency(v) for v in fuel_index]),
         "sources": sources.snapshot() if sources is not None else None,
     }
-    dependency_hash = digest(closure)
+    original_dependency_hash = digest(closure)
     rows = []
     # Preserve even malformed identities and duplicate records as findings.
     for invoice in invoices:
@@ -146,10 +150,10 @@ def reconcile_batch(
             if total is None or any(value is None for value in amounts) or sum(value for value in amounts if value is not None) != total:
                 row["errors"].append("invoice_total_mismatch")
             link = link_shipment(row["carrier"], line.get("shipment_ref", line.get("shipment_id")), shipments)
+            row["auto_link"] = link
+            row["link_method"] = "exact_namespaced_reference"
             row["shipment"] = link["shipment"]
-            if link["shipment"] is None:
-                row["errors"].append(link["reason_code"])
-            else:
+            if link["shipment"] is not None:
                 shipment_id = link["shipment"].get("shipment_id")
                 if not _identity(shipment_id):
                     row["errors"].append("shipment_id_missing")
@@ -195,9 +199,53 @@ def reconcile_batch(
             namespace = row["carrier"]
         return {"carrier": namespace, "invoice_id": row["invoice_id"], "line_id": row["line_id"]}
     ids = Counter(canonical(occurrence_identity(row)) for row in rows)
+    # Assign IDs from original data before manual links or allocation ordering.
+    # This keeps baseline and resolved contexts identical and avoids recursion.
+    rows.sort(key=lambda r: canonical(r["invoice"]) + canonical(r["line"]))
+    serials, applied_links = Counter(), []
     for row in rows:
-        if ids[canonical(occurrence_identity(row))] > 1:
+        identity = occurrence_identity(row)
+        identity_hash = digest(identity)
+        ordinal = serials[identity_hash]
+        serials[identity_hash] += 1
+        row["occurrence_id"] = digest({"identity": identity, "ordinal": ordinal})
+        unique = ids[canonical(identity)] == 1
+        if not unique:
             row["errors"].append("occurrence_identity_ambiguous")
+        row["link_context"] = None
+        # Link approval is separate from money approval. A valid source-backed
+        # occurrence can expose a context even when other pricing facts fail.
+        if (unique and row["invoice_pointers"] and row["billed"] is not None
+                and _identity(row["invoice_id"]) and _identity(row["line_id"])):
+            try:
+                carrier = normalize_reference(row["carrier"])
+                reference = normalize_reference(row["line"].get("shipment_ref", row["line"].get("shipment_id")))
+                row["link_context"] = {
+                    "context_id": digest({"link_occurrence": row["occurrence_id"]}),
+                    "occurrence_id": row["occurrence_id"], "carrier": carrier,
+                    "reference": reference, "dependency_hash": original_dependency_hash,
+                }
+            except ValueError:
+                pass
+        if row["shipment"] is None and row["link_context"] is not None and link_resolver is not None:
+            try:
+                target = link_resolver(dict(row["link_context"]))
+                shipment = resolve_target(row["carrier"], target, shipments, lambda value: digest(value) in verified)
+                if shipment is not None:
+                    row["shipment"] = shipment
+                    row["shipment_key"] = shipment["shipment_id"]
+                    row["link_method"] = "trusted_code_ruling"
+                    applied_links.append({"context_id": row["link_context"]["context_id"], "target_shipment_id": shipment["shipment_id"]})
+                elif target is not None:
+                    row["errors"].append("manual_link_target_invalid")
+            except (ValueError, TypeError, KeyError):
+                row["errors"].append("link_resolver_refused")
+        if row["shipment"] is None:
+            row["errors"].append(row["auto_link"]["reason_code"])
+    dependency_hash = digest({
+        "original_dependency_hash": original_dependency_hash,
+        "applied_links": sorted(applied_links, key=canonical),
+    })
     # Invalid rows cannot displace a valid occurrence during allocation. Any
     # incomplete row in a linked group poisons that group's duplicate inference.
     def group(row):
@@ -206,13 +254,13 @@ def reconcile_batch(
     # duplicate group. Refuse all linked charges for that shipment conservatively.
     blocked = {(normalize_reference(r["carrier"]), r["shipment_key"]) for r in rows if r.get("shipment_key") and r["errors"]}
     rows.sort(key=lambda r: (bool(r["errors"]), allocation_key(r) if not r["errors"] else canonical(r["invoice"]) + canonical(r["line"])))
-    seen, serials, engine_cache = set(), Counter(), {}
+    seen, engine_cache = set(), {}
     findings = []
     for row in rows:
         errors = list(row["errors"])
         entitlement, expected, duplicate = None, None, False
         pointers = row["invoice_pointers"] + row["line_pointers"]
-        trace = [{"step": "link", "method": "exact_namespaced_reference", "shipment_id": row.get("shipment_key")}]
+        trace = [{"step": "link", "method": row["link_method"], "shipment_id": row.get("shipment_key")}]
         if not errors:
             key = group(row)
             if key[:2] in blocked:
@@ -280,16 +328,14 @@ def reconcile_batch(
                     expected = 0 if duplicate else entitlement["expected_cents"]
                     seen.add(key)
         identity = occurrence_identity(row)
-        identity_hash = digest(identity)
-        ordinal = serials[identity_hash]
-        serials[identity_hash] += 1
-        occurrence_id = digest({"identity": identity, "ordinal": ordinal})
+        occurrence_id = row["occurrence_id"]
         verdict, disputed = classify(row["billed"], expected, tolerance_cents)
         reason = errors[0] if errors else ("duplicate_charge" if duplicate else "priced_entitlement")
         trace.append({"step": "allocation", "duplicate": duplicate, "expected_cents": expected, "deadband_cents": tolerance_cents, "no_undercharge_netting": True})
         findings.append({
             "finding_id": digest({"occurrence_id": occurrence_id, "policy": POLICY_VERSION}),
             "occurrence_id": occurrence_id, "occurrence": identity,
+            "link_context": row["link_context"],
             "dependency_hash": dependency_hash, "billed_cents": row["billed"],
             "expected_cents": expected, "disputed_cents": disputed,
             "verdict": verdict, "reason_code": reason, "trace": trace,

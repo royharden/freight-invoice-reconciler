@@ -93,7 +93,7 @@ dependency closure. No PDF coordinates or tamperproof storage are claimed.
 
 Defaults bound original input to 8 MB, 100 archived pages and 200,000 codepoints
 per page; v1 invoice extraction accepts one page and at most 1,000 charge lines.
-The optional `pypdf` adapter validates the header, refuses encryption/malformed
+The optional `pdfplumber` adapter validates the header, refuses encryption/malformed
 content, bounds pages/output size and checks elapsed time between page operations.
 Its profile includes the actual installed parser version. It has no OCR, document
 script, fetch, shell or rendering path. No dependency is installed by this source.
@@ -104,10 +104,39 @@ normalization round trips, sums/dates/units, malformed/encrypted/oversize files,
 unknown layouts/descriptions and changed bytes/editions. The elapsed check is
 cooperative and cannot interrupt a parser blocked within a page; hard CPU/memory
 isolation for untrusted PDF processing remains a later runtime activation item.
-Native CSV field-pointer ingestion is not implemented. Structured JSON uses the
-whole-document binding above, not record/field pointer claims. Runtime validation
-of tampered values, types, quotes, missing leaves and structured payload mutations
-is deferred along with parser validation under the current static-only authorization.
+The adapter supports one native-text page only and fails closed if the underlying
+PDFMiner encryption-state compatibility seam or parser version is unavailable.
+Parser/version compatibility, encryption behavior and time/memory limits have not
+been exercised; no dependency or license has been installed or adopted. Runtime
+validation of tampered values, types, quotes, missing leaves and structured payload
+mutations is deferred under the current static-only authorization.
+
+## JSON and CSV record/field evidence
+
+`resolver.register_json_records(raw_bytes, key_field)` accepts an original UTF-8
+JSON array of uniform flat scalar records. `register_csv_records(raw_bytes,
+key_field, normalizers)` accepts strict comma/double-quote CSV with unique explicit
+identifier headers and one named normalizer for every column. Both return a list
+of complete bound record dictionaries accepted by `verify_document`. Nested JSON
+objects continue to use `register_document`; records are not flattened by guessing.
+
+`RecordFieldPointer` extends the existing span with record format, zero-based
+record index, unique string record key, key field, field name and conversion ID.
+The resolver rechecks the exact field association in its immutable source edition,
+not just a matching substring. Spans retain original JSON scalar token or CSV cell
+lexemes, including quoting/escapes and original line endings. JSON scalar decoding
+uses `json-scalar-v1`; CSV uses `csv-cell:<normalizer>`. Conversion, source edition,
+record/key/field and quote are all bound. Downgrading a table pointer to a bare
+span, mixing records, omitting original fields or changing conversions refuses.
+
+Limits are 1,000 records, 100 fields and 4,000 codepoints per cell, in addition to
+the registry byte/page bounds. Duplicate JSON keys/CSV headers, nonunique or empty
+record keys, floats, mismatched schemas, unsupported nested records and ambiguous
+syntax refuse. Empty CSV lexemes refuse; explicit `null` with `null-v1` represents
+unknown when that column's declared schema permits it. A flat record is not an
+invoice-assembly rule or an independent truth source. Whole-document JSON evidence
+remains compatible with the existing CLI. Runtime parser/Unicode/escape/changed
+source/record/normalizer and refusal vectors are deferred.
 
 ## Linking, batch allocation and findings
 
@@ -120,7 +149,7 @@ match or link ruling is inferred. Carrier normalization is applied to copies at
 the pricing seam; original spellings remain source-bound in the input closure.
 
 `freightrec.reconcile.reconcile_batch(contracts, shipments, invoices, fuel_index,
-sources=resolver, tolerance_cents=0)` calls DL1's actual `price_contracts` facade.
+sources=resolver, tolerance_cents=0, link_resolver=None)` calls DL1's actual `price_contracts` facade.
 It does not resolve contract versions itself. Inputs follow `docs/DOMAIN.md` and
 the invoice shape above; structured originals use `register_document`. The complete
 supplied batch defines duplicate scope. Callers must supply all relevant invoices;
@@ -172,3 +201,36 @@ collisions, typo and cross-carrier refusal, contract gap/overlap, missing eviden
 typed-value/source mutation, engine/policy revision invalidation, cap ordering,
 duplicate plus undercharge, tolerance boundaries and DL3 stale-approval/draft joins.
 No parser, pricing, reconciliation or draft behavior has been executed here.
+
+## Source-bound link contexts and local rulings
+
+Every uniquely identified source-valid billed occurrence with a normalizable
+carrier/reference exposes `link_context`, including successful exact links. Invalid
+source bindings, ambiguous occurrence identity, invalid reference or invalid billed
+money give no actionable context. The context contains exactly `context_id`,
+`occurrence_id`, normalized `carrier`/`reference`, and `dependency_hash`. Its ID is
+stable per occurrence. Its dependency binds the full verified original input batch,
+all candidates, namespaces, source/conversion certificates, policy and engine before
+any manual links, callbacks or final findings. Baseline and resolved findings retain
+the same original context; the final result is never fed into its own hash.
+
+An optional trusted local CODE callback `link_resolver(context)->shipment_id|None`
+is called only after exact automatic linking fails. It never overrides a successful
+exact link and never accepts a raw caller ruling dictionary or verified flag. A
+target must be a unique original source-valid supplied shipment in the same carrier
+namespace. Missing, duplicate, cross-carrier and invalid-source targets refuse;
+callback refusal leaves the occurrence unknown. Final finding dependencies bind the
+canonical actually applied context-to-target set in addition to the original hash.
+Link approval alone authorizes no disputed dollars or draft. This callback is a local
+code seam; it is not human authentication and does not itself establish a human act.
+
+DL4 first reconciles original sources without rulings, refreshes ALL current link
+contexts through DL3 (including exact links), then reconciles the same retained
+originals with the persisted-human-link resolver. Only final findings enter monetary
+review. The store/CLI must also retire formerly current contexts absent from the new
+valid set, including invalid/removed occurrences, so source disappearance and return
+cannot revive old rulings. That shared store/CLI absence API is INT-owned; DL2 emits
+no fabricated contexts for invalid sources. Deferred checks include exact-link
+priority, baseline/resolved context equality, callback rejection, cross-carrier and
+duplicate targets, A-B-A/absence staleness, source-policy-engine changes, unlink and
+provisional denial, and subsequent monetary review/draft separation.
