@@ -37,7 +37,7 @@ def decode_pdf_descriptor(value):
     return raw
 
 
-def hydrate_original_bundle(bundle):
+def hydrate_original_bundle(bundle, *, resolver=None):
     """Retain one resolver for original JSON and guarded original PDF invoices.
 
     This codec supplies no admission or human authority. The CLI separately
@@ -48,7 +48,10 @@ def hydrate_original_bundle(bundle):
         raise ValueError("unsupported construction bundle fields")
     if any(type(bundle.get(name)) is not list for name in names):
         raise ValueError("original source collections must be lists")
-    resolver = SourceResolver()
+    if resolver is None:
+        resolver = SourceResolver()
+    elif type(resolver) is not SourceResolver:
+        raise ValueError("actual current SourceResolver required")
     documents = {}
     for name in names:
         documents[name] = []

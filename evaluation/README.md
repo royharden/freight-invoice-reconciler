@@ -17,20 +17,23 @@ joins externally supplied shipment/invoice/duplicate links and supplied exact/ne
 identities; `inspect_splits` flags any such component crossing splits. Completeness of
 the input graph and near-copy manifest remains an independent review prerequisite.
 
-The shared capture adapter is `observations.freeze_recording`; see
-[OBSERVATIONS.md](OBSERVATIONS.md) for its exact source/link/finding contract. It
-freezes the
-complete source occurrence universe, canonical IDs/components, explicit recorded
-link outcomes and actual A2 attempts in one hash-bound immutable JSON edition.
-Every arm uses that edition; references join only in evaluation through an
-exact-keyset `scoring_observations` call. `product_input` returns facts only and
-does not manufacture persisted manual-link authority or original source bytes.
-The current frozen observation edition is original-JSON only. Valid original-PDF
-descriptors and PDF-bound invoice editions fail closed with `unsupported_source:`
-at capture, load, diagnostic and replay boundaries. CLI native-PDF input remains
-separate; recording never reconstructs parsed PDF facts as original JSON.
-Descriptor validation uses the canonical original-bundle codec. See the PDF
-capability boundary in OBSERVATIONS.md before attempting a PDF comparison.
+The shared capture adapters are JSON-only `observations.freeze_recording` (v1)
+and explicit `observations.freeze_original_bundle_recording` (v2); see
+[OBSERVATIONS.md](OBSERVATIONS.md) for their exact source/link/finding contracts.
+Both freeze the complete source occurrence universe, canonical IDs/components,
+recorded link outcomes and actual A2 attempts. Every arm uses that edition;
+references join only through exact-keyset `scoring_observations`.
+
+V1 still refuses PDF descriptors and bound PDF invoices at capture, load,
+diagnostic, scoring and replay boundaries. V2 retains exact original mixed
+JSON/PDF bundle strings/base64 and verifies complete bindings through canonical
+guarded hydration using the capture resolver. Each consumer freshly validates
+originals, derived observations and the pinned source/runtime/dependency edition;
+changed editions or worker failure refuse without fallback. No PDF facts are
+reconstructed as original JSON. V2 `product_input` returns a detached exact
+original bundle only; v1 retains its original bound-document behavior. Neither
+manufactures persisted manual-link authority. Hashes commit an externally
+retained edition, not human authenticity or independent truth.
 The baseline wire adapter is documented in `arms.py`; pricing stays separate
 from product charge helpers. A0 uses canonical offset timestamps,
 carrier/shipment/code/stop keys, invoice IDs and stable line IDs. Its designated
