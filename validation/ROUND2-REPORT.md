@@ -1,4 +1,4 @@
-# Round 2 native validation — builder evidence
+# Round 2 native validation â€” builder evidence
 
 Python3.12.13, pytest8.4.2, hash-pinned dependency edition in requirements-round2.txt. Actual tests ran against each owner's preserved checkout, then together against local master. No live model/API usage, credential reads, public release or independent scientific campaign. Current app testing spendUSD0 of USD40 ceiling.
 
@@ -41,7 +41,7 @@ Independent nonlineage authors/oracle/custodian/stand-in endpoints and actual hu
 
 Both Linux executions used network NONE, read-only root/source/venv, nonroot user, capped memory/CPU/pids, tmpfs and only a project artifact mount. No home/socket/credential mount, privileged mode, host port, image pull, or named volume. Pinned public wheel setup was a separate permitted package-only network step, with RAM6.33GiB; tests6.40GiB/journey6.95GiB before launch. Own ephemeral containers are gone and m13freight/round2 claim released; worktree/venvs/artifacts retained. No other container was stopped.
 
-## Isolated PDF worker — later source and actual checks
+## Isolated PDF worker â€” later source and actual checks
 
 DL2 candidate294e7d530cb052a7fa14032e2ad895f96b5de981 adds a fixed owned parser process, parent wall deadline including startup, bounded request/stdout/stderr and strict result protocol, and required OS guards before parser import. Windows uses queried own-process Job limits; Linux uses verified address-space/CPU limits. No unsafe parent fallback or shell/user command hook. Profile is a new immutable pdfplumber-<version>-isolated-v2 edition. This does not provide a complete malicious-code/OS sandbox or hard real-time scheduling guarantee.
 
@@ -56,7 +56,7 @@ Corrected setup explicitly enabled executable native-library mappings on the APP
 
 All own containers are absent and m13freight/pdfguard released; source/venvs/artifacts remain. No named volumes, host ports, pulls, external model calls or credential use. Selected controlled worker kill/overflow and guard-before-parser behavior executed on both platforms; destructive resource exhaustion/broad hostile-PDF qualification remains unexecuted.
 
-## Original PDF CLI bridge — later revision
+## Original PDF CLI bridge â€” later revision
 
 DL4 candidate121fc3677bc3c3a188704d6d48627f06b40137e7 adds canonical bundles.py hydration: original JSON strings remain compatible; invoice descriptors must contain exactly media_type/template_id/data_base64, with strict canonical base64 and size/type bounds. Actual guarded extraction and SAME resolver bind raw PDF SHA/profile/pages/quotes to typed invoice fields. No caller evidence/verified hook, reconstructed JSON original or guard relaxation. Stateful hydration failures still retire prior contexts before refusal.
 
@@ -66,6 +66,17 @@ ONE owner actual native CLI module report at candidate121fc36 exited0/stderr0; t
 
 INT integrated5d831a56534aaddfe60bcf4d5a8eecc0ff0b81ff and executed complete native suite: **375passed/0fail/0skip**,48.46s, runtime-state/INT-pdf-cli-076362f0ea644bfbaac1e338280e1029. No current-revision Linux bridge result is inferred from the earlier guarded-parser Linux run.
 
-## Current remaining source path
+## Historical remaining source path before final v2
 
 DL4 now owns a separate P8 follow-up for explicit versioned original-PDF frozen observation capture/replay across the same A0/A1/A2 observations, preserving strict old JSON format validation and keeping reference labels outside product replay. That future source is not covered by the results above. Independent role endpoints and corpus/human/live gates remain pending; no benchmark claim follows from these builder checks.
+
+
+## Final selected builder validation — 2026-10-28
+
+DL4 original-observation v2 candidate a32a71c845d8a7c4dde210639bfa12fbcb0599ae accepted and merged at ae415e13b6486123d9d2ebead8b03a1f31600f0f. Explicit freeze_original_bundle_recording uses freightrec-observation-v2-originals with exact original PDF/JSON bytes, canonical guarded hydration, central source/runtime edition checks and detached product input. Legacy v1 JSON remains compatible and refuses PDF. Nested metadata-label leakage found by Medium0053 was repaired; fresh High0055 PASS covered64 targeted cases. Owner128new+22oldPDF+6JSON, repaired59 and reviewer64 are separately attributed overlapping checks, not a final expanded-suite total.
+
+INT final full suite at the merged source: **559passed/0fail/0skip native Windows**,164.52s, Python3.12.13; **554passed/0fail/5Windows-only skips offline Linux**,234.27s. Native artifact runtime-state/INT-observations-final-e0b3c6a11db5461baa4fbfc0149739f2; Linux artifact runtime-state/INT-linux-final-v2-757517f61de3458c8c8abe966c3e167e. These are builder regressions, not independent benchmark evidence. Linux used the same cached image sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36 and existing pinned venv staged on exec-enabled app tmpfs with mandatory pdfplumber preflight. Default worker5s unchanged; no network, pulls, host ports, privileged mode, credential/home/socket mount or named volume. Earlier failed attempts remain recorded above. Own final container verified absent with14.85GiB free RAM; m13freight/finalv2 claim released. No other container stopped.
+
+Fresh wheel built offline with pinned setuptools80.9.0/wheel0.45.1; source4df042facf064db160a2de4bc8fccd1db0211169 adds ignore metadata only beyond tested ae415e1. Wheel freight_invoice_reconciler-0.1.0-py3-none-any.whl SHA256 ac83aa1aaa3753625e48b85d6445e4e755ecc6988f4975f743316dae650ef761. Fresh OUTER .venv-wheel-round2 installed hash-locked dependencies and own wheel OFFLINE. Outside-checkout isolated import verified installed site-packages and evaluation absent. Installed freightrec.exe status and original-PDF report each exit0/stderr0. Three findings and69PDF pointer occurrences verified against original SHA34d575ccb33b2efe1ed046baed4ffffaeb5c1ffb082e81c9895180f4c2a4c198. No human-approved draft. Artifact runtime-state/INT-wheel-final-d728b2dede4f4c169a46c2462334b564/smoke/receipt-corrected.json pins commands/raw hashes. Initial proof HELPER failed because it concatenated three separate JSON pre blocks; corrected per-block parser passed against SAME unchanged report. Negative helper/raw streams retained; successful installed report was not rerun or overwritten.
+
+Selected implementation grants are exhausted; all DLs AVAILABLE with no active new source grant. Dirty Mode remains active with explicit ROUND2 local-runtime relaxation until Roy closes it. Independent nonlineage authors/oracle/custodian/auditor endpoints, untouched independent corpora/custody, actual human sessions, admission, broad hostile/security/load qualification and live model campaign remain pending. Current INT/DLs/descendants cannot fill independent roles. No SKIP_M13, release, scientific accuracy/savings or human-independent claim. A3/Jev not_run; A4 not_run_guardrail. No key/account/endpoint supplied, no credential files read, no remotes/push/publication. Actual testing spendUSD0.00 of cumulativeUSD40 ceiling; no midnight reset; placeholder inventory unchanged. Preserve all branches/worktrees/venvs/artifacts.
