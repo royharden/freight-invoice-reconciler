@@ -5,6 +5,8 @@ import json
 import sqlite3
 from pathlib import Path
 
+from ..state_policy import validate_state_path
+
 
 def _canonical(value: dict) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
@@ -12,7 +14,7 @@ def _canonical(value: dict) -> str:
 
 class Ledger:
     def __init__(self, path: str | Path):
-        self.path = Path(path)
+        self.path = validate_state_path(path, forbidden_roots=(Path(__file__).resolve().parents[3],))
         self.connection = sqlite3.connect(self.path, isolation_level=None)
         self.connection.execute("PRAGMA journal_mode=WAL")
         self.connection.execute("PRAGMA recursive_triggers=ON")

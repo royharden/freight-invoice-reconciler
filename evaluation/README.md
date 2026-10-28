@@ -16,8 +16,16 @@ joins externally supplied shipment/invoice/duplicate links and supplied exact/ne
 identities; `inspect_splits` flags any such component crossing splits. Completeness of
 the input graph and near-copy manifest remains an independent review prerequisite.
 
-The baseline observation adapter is documented in `arms.py`; it is deliberately
-separate from product pricing helpers. A0 uses canonical offset timestamps,
+The shared capture adapter is `observations.freeze_recording`; see
+[OBSERVATIONS.md](OBSERVATIONS.md) for its exact source/link/finding contract. It
+freezes the
+complete source occurrence universe, canonical IDs/components, explicit recorded
+link outcomes and actual A2 attempts in one hash-bound immutable JSON edition.
+Every arm uses that edition; references join only in evaluation through an
+exact-keyset `scoring_observations` call. `product_input` returns facts only and
+does not manufacture persisted manual-link authority or original source bytes.
+The baseline wire adapter is documented in `arms.py`; pricing stays separate
+from product charge helpers. A0 uses canonical offset timestamps,
 carrier/shipment/code/stop keys, invoice IDs and stable line IDs. Its designated
 residual line is lexically last `(line_id, occurrence_id)` within the invoice;
 every flattened observation row must repeat the actual invoice `total_cents`
@@ -30,8 +38,11 @@ takes priority. A1 uses newest `(effective_from, contract_id)`, first listed lan
 and latest fuel publication, regardless of shipment date. Detention billed units
 have explicit decimal-string hours/minutes/increments, never inferred from elapsed
 time. A1 requires explicit row `currency: "USD"` before pricing; missing/non-USD
-currency abstains without a monetary proposal. Its declared observation adapter remains source-only and has not been
-qualified against the actual domain parser. Supply the same frozen extraction/link
+currency abstains without a monetary proposal. It consumes the actual domain's
+top-level lane contracts and latest index_value through the newest contract's
+fuel bracket. This source adapter remains unexecuted/unqualified. Recorded
+resolved human links are shared upstream observations, not fuzzy automatic
+links, and no adapter can authorize a product link. Supply the same frozen extraction/link
 observations to every arm. No baseline
 policy may change after freeze without a new preregistration.
 
