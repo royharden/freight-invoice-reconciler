@@ -1,0 +1,10 @@
+{
+  "data_origin": "builder_non_independent",
+  "contracts": [],
+  "shipments": [],
+  "fuel_index": [],
+  "invoices": [
+    "{\n  \"carrier\": \"Saffron Meadow Demo Carrier\",\n  \"invoice_id\": \"DEMO-UNKNOWN-1\",\n  \"invoice_issue_ts\": \"2026-01-02T12:00:00+00:00\",\n  \"lines\": [\n    {\n      \"line_id\": \"DEMO-LINE-1\",\n      \"shipment_ref\": \"DEMO-NOT-SUPPLIED\",\n      \"code\": \"LH\",\n      \"stop_seq\": 0,\n      \"billed_cents\": 12500,\n      \"currency\": \"USD\"\n    }\n  ],\n  \"currency\": \"USD\",\n  \"total_cents\": 12500\n}\n"
+  ],
+  "tolerance_cents": 0
+}
